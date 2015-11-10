@@ -1,0 +1,1232 @@
+#!/bin/bash
+#shopt -s extglob
+#/etc/init.d/mcservers
+
+### BEGIN INIT INFO
+# Provides:   mcservers
+# Required-Start: $local_fs $remote_fs $mysqld $mysql $mongo
+# Required-Stop:  $local_fs $remote_fs $mysqld $mysql $mongo
+# Should-Start:   $network
+# Should-Stop:    $network
+# Default-Start:  4 5 6
+# Default-Stop:   0 1 6
+# Short-Description: mcservers Service Script
+# Description: Runs multiple Minecraft screen process as a service
+#       this service will safely start, stop, restart, update, and edit each server.
+#       This script will allow you to update and run various tasks.
+### END INIT INFO
+#
+#
+# Script Configuration Setting
+User=root
+SERVER_SETTINGS="/home/minecraft/MCServers"
+RED='\e[0;31m'          # Red
+GREEN='\e[0;32m'        # Green
+LIGHTGREEN='\e[0;92m'   # Light Green
+YELLOW='\e[0;33m'       # Yellow
+NOCOLOR='\033[0m'       # Reset
+exist="false"
+#
+#
+# Load Settings
+if [ -f $SERVER_SETTINGS/servers.cfg ] ; then
+    . "$SERVER_SETTINGS/servers.cfg"
+else
+    create_serverscfg
+fi
+#
+#
+# Run commands as the user supplied in $USER
+command() {
+    ME=$(whoami)
+    if [ "$ME" == $User ] ; then
+        bash -c "$1"
+    else
+        su $User -c "$1"
+    fi
+}
+# Check if the screen is running.
+is_running() {
+    if ps ax | grep java | grep "${SERVER_NAME[$1]}" > /dev/null ; then
+        return 0
+    else
+        return 1
+    fi
+}
+# Checks if the server is running then send a message. # Bug Found, needs fixed. If status checking a server ID higher than current listed servers, shows ID (NoName) Active, even though it doesn't exist.
+get_running() {
+    if is_running "$1" ; then
+        echo -e "${LIGHTGREEN}Server ID:${GREEN}$1 ${SERVER_NAME[$1]}${LIGHTGREEN}: Active.${NOCOLOR}"
+    else
+        if [ "${SERVER_ENABLED[$1]}" = true ] ; then
+            echo -e "${LIGHTGREEN}Server ID:${GREEN}$1 ${SERVER_NAME[$1]}${LIGHTGREEN}: ${RED}Offline.${NOCOLOR}"
+        else
+            echo -e "${LIGHTGREEN}Server ID:${GREEN}$1 ${SERVER_NAME[$1]}${LIGHTGREEN}: ${YELLOW}Disabled.${NOCOLOR}"
+        fi
+    fi
+}
+start_servers() {
+    exist="false"
+    echo -e "${LIGHTGREEN}Server ID:${GREEN}$1 ${SERVER_NAME[$1]}${LIGHTGREEN}...${NOCOLOR} "
+    if is_running "$1" ; then
+        echo -e "   ${GREEN}Running!${NOCOLOR}" 
+    else
+        if [ "${SERVER_ENABLED[$1]}" == true ] ; then
+            while [ "$exist" == "false" ]; do
+                if [ -d "$SERVER_SETTINGS/${SERVER_PATH}" ] ; then
+                    if [ "${SERVER_EXTRAS[$1]}" != none ] ; then
+                                                #Run specific commands based on each server listed of the servers.cfg
+                        echo -e "${LIGHTGREEN}Running Extra_Commands For ${GREEN}${SERVER_NAME[$1]}${LIGHTGREEN}.${NOCOLOR}"
+                        command "cd $SERVER_SETTINGS/${SERVER_PATH[$1]} && ${SERVER_EXTRAS[$1]}"
+                    fi
+                                                #Either this is the Spigot.jar or Bungeecord as listed in the servers.cfg
+                    if [ -f "$SERVER_SETTINGS/${SERVER_CORE[$1]}" ] ; then
+                        { cp "$SERVER_SETTINGS/${SERVER_CORE[$1]}" "${SERVER_SETTINGS}/${SERVER_PATH[$1]}/${SERVER_CORE[$1]}"
+                        echo -e "   ${LIGHTGREEN}Copied ${GREEN}${SERVER_CORE[$1]}${LIGHTGREEN} from ${GREEN}${SERVER_SETTINGS}${LIGHTGREEN}!${NOCOLOR}"
+                        }
+                    else {
+                            echo -e "\n${RED}ERROR! ${LIGHTGREEN}${SERVER_CORE[$1]} ${RED}Not Found!${NOCOLOR}"
+                            echo -e "${LIGHTGREEN}   Has ${YELLOW}service mcservers update spigot/minecraft/snapshot/bungee/all${LIGHTGREEN} been ran?${NOCOLOR}"
+                            echo -e "${LIGHTGREEN}   If you have recently ran ${YELLOW}update${LIGHTGREEN}, did output a different ${GREEN}filename/version${LIGHTGREEN} or ${GREEN} failed?${NOCOLOR}"
+                            echo -e "${LIGHTGREEN}   Update your ${GREEN}servers.cfg${LIGHTGREEN} in ${GREEN}${SERVER_SETTINGS}${NOCOLOR}"
+                        }
+                    fi
+                    exist="true"
+                else
+                    {
+                        if [ "$2" != "skip" ] ; then
+                            echo -e "\n${RED}ERROR! ${YELLOW}${SERVER_PATH[$1]}${LIGHTGREEN} in ${YELLOW}${SERVER_SETTINGS}${LIGHTGREEN} Doesn't Exist!${NOCOLOR}"
+                            echo -e "${LIGHTGREEN}Should ${GREEN}${SERVER_PATH[$1]}${LIGHTGREEN} be created and started?${NOCOLOR}"
+                            yes_or_no yn
+                            case "$yn" in
+                                Y) {
+                                        echo -e "\n${LIGHTGREEN}Creating ${GREEN}${SERVER_PATH[$1]} ${LIGHTGREEN}in ${GREEN}${SERVER_SETTINGS}${LIGHTGREEN}...${NOCOLOR}"
+                                        cd "${SERVER_SETTINGS}" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+                                        mkdir "${SERVER_PATH[$1]}"
+                                        echo -e "${LIGHTGREEN}Created.${NOCOLOR}"
+                                    };;
+                                N) {
+                                        echo -e "${GREEN}$SERVER_PATH[$1]${LIGHTGREEN} Not Created. ${GREEN}${SERVER_NAME[$1]}${LIGHTGREEN} cannot start without it."
+                                    };;
+                            esac
+                        fi
+                    }
+                fi
+            done
+            cd "$SERVER_SETTINGS/${SERVER_PATH[$1]}" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS}/${SERVER_PATH[$1]} from " pwd "!${NOCOLOR}\n" && exit; }
+            command "screen -dmS ${SERVER_NAME[$1]} ${START_ARGS[$1]} -Dserver=${SERVER_NAME[$1]} ${SERVER_CORE[$1]}"
+            echo -e "   ${GREEN}Starting!${NOCOLOR}"
+        else
+            echo -e "   ${YELLOW}DISABLED!${NOCOLOR}"
+        fi
+    fi
+    exist="false"
+}
+stop_servers() {
+    echo -e -n "\n${LIGHTGREEN}To stop countdown/script entirely: ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}C${LIGHTGREEN}.${NOCOLOR}"
+    i="3"
+    while [ "$i" -gt 0 ]; do
+        echo -e -n "${LIGHTGREEN} .${NOCOLOR}"
+        sleep 1
+        : $((i--))
+    done
+    echo " "
+    if is_running "$1" ; then
+        echo -e -n "${RED}Stopping Server ${LIGHTGREEN}ID:${GREEN}$1 ${SERVER_NAME[$1]}${RED}...${NOCOLOR}"
+    else
+        echo -e "${LIGHTGREEN}Server ID:${GREEN}$1 ${SERVER_NAME[$1]}${LIGHTGREEN}: ${YELLOW}Already Offline?${NOCOLOR}"
+    fi
+    if is_running "$1" ; then
+        i="${SHUTDOWN_SECONDS[$1]}"
+        while [ "$i" -gt 0 ]; do
+            command "screen -rx ${SERVER_NAME[$1]} -X eval 'stuff \"${MSG_CMD[$1]} ${SHUTDOWN_MSG1[$1]}$i${SHUTDOWN_MSG2[$1]}\"\015'"
+            echo -e -n "${LIGHTGREEN} ${i}s...${NOCOLOR}"
+            sleep 1
+            : $((i--))
+        done
+        echo -e "\n${LIGHTGREEN}   Executing ${SHUTDOWN_CMD[$1]}."
+        command "screen -rx ${SERVER_NAME[$1]} -X eval 'stuff \"${SHUTDOWN_CMD[$1]}\"\015'"
+        sleep 3
+        echo -e -n "${LIGHTGREEN}   Waiting until server is offline.${NOCOLOR}"
+        i="10"
+        while [ "$i" -gt 0 ]; do
+            echo -e -n "${LIGHTGREEN} .${NOCOLOR}"
+            sleep 1
+            : $((i--))
+        done
+        echo -e " "
+        if is_running "$1" ; then
+            echo -e "${GREEN}${SERVER_NAME} ${LIGHTGREEN}has not finished shutting down after 10 seconds.${NOCOLOR}"
+            echo -e "${LIGHTGREEN}Please ${YELLOW}Wait${LIGHTGREEN} or ${YELLOW}Check${LIGHTGREEN} it's screen."
+            echo -e "${LIGHTGREEN}    Use: ${YELLOW}service mcservers screen $1${NOCOLOR}"
+        fi
+    fi
+}
+restart_servers() {
+    echo -e -n "${YELLOW}Restarting ${LIGHTGREEN}Server ID:${GREEN}$1 ${SERVER_NAME[$1]}... ${NOCOLOR}"
+    if is_running "$1" ; then
+        stop_servers "$1"
+        sleep 2
+        start_servers "$1"
+    else
+        start_servers "$1"
+    fi
+}
+update_spigot(){
+    if [ "${BUILDTOOLS_URL}" == "none"  ] ; then
+        echo -e "\n${YELLOW}Skipping... BUILDTOOLS_URL=\"none\"\n${NOCOLOR}"
+    else
+        cd $SERVER_SETTINGS/buildtools || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS}/buildtools from " pwd "!${NOCOLOR}\n" && exit; }
+        if [ "$1" == "clean" ] ; then
+            echo -e -n "\n${LIGHTGREEN}Cleaning Up in: ${NOCOLOR}"
+            pwd;
+            command "find . | grep -v 'buildtools.sh' | xargs rm -rf"
+        fi
+        if [ -f "BuildTools.jar?" ] ; then
+            command "rm BuildTools.jar?"
+            echo " "
+        fi
+        if [ -f "BuildTools.jar" ] ; then
+            command "rm BuildTools.jar"
+        fi
+        echo -e -n "\n${LIGHTGREEN}Downloading Latest ${GREEN}BuildTools.jar ${LIGHTGREEN}for${GREEN} ${BUILDTOOLS_SPIGOT} ${LIGHTGREEN}Please Wait.${NOCOLOR}"
+        i="3"
+        while [ "$i" -gt 0 ]; do
+            echo -e -n "${LIGHTGREEN} .${NOCOLOR}"
+            sleep 1
+            : $((i--))
+        done
+        echo -e "\n${LIGHTGREEN}Downloading ${GREEN}BuildTools.jar${LIGHTGREEN}...${NOCOLOR}"
+        curl "${BUILDTOOLS_URL}" -o "BuildTools.jar"
+        echo -e "\n${LIGHTGREEN}Running ${GREEN}Buildtools.jar${NOCOLOR}\n"
+        HOME=/home/minecraft java -jar "BuildTools.jar"
+        echo -e "\n${LIGHTGREEN}Copying${GREEN} ${BUILDTOOLS_SPIGOT} ${LIGHTGREEN}to${GREEN} $SERVER_SETTINGS ${LIGHTGREEN}as${GREEN} ${BUILDTOOLS_OUTPUT}${LIGHTGREEN}.${NOCOLOR}"
+        if [ -f "${BUILDTOOLS_SPIGOT}" ] ; then
+            { command "cp $SERVER_SETTINGS/buildtools/${BUILDTOOLS_SPIGOT} ../${BUILDTOOLS_OUTPUT}"
+            echo -e "${GREEN}Spigot ${LIGHTGREEN}Servers will be updated upon next ${YELLOW}Start${LIGHTGREEN}/${YELLOW}Restart${LIGHTGREEN}.${NOCOLOR}"
+            }
+        else {
+            echo -e "\n${RED}ERROR! ${GREEN}${BUILDTOOLS_SPIGOT} ${RED}Not Found!${NOCOLOR}"
+            echo -e "${LIGHTGREEN}   Did ${GREEN}BuildTools.jar${LIGHTGREEN} output a different ${GREEN}filename/version${LIGHTGREEN}?${NOCOLOR}"
+            echo -e "${LIGHTGREEN}   If so, update your ${GREEN}servers.cfg${LIGHTGREEN} in ${GREEN}${SERVER_SETTINGS}${NOCOLOR}"
+            echo -e "${LIGHTGREEN}     with ${GREEN}BUILDTOOLS_SPIGOT=\"CoreFileName.jar\" ${LIGHTGREEN}from ${GREEN}${SERVER_SETTINGS}/buildtools${LIGHTGREEN}.${NOCOLOR}"
+            }
+        fi
+    fi
+}
+update_minecraft(){
+    if [ "${MINECECRAFT_SERVER_URL}" == "none"  ] ; then
+        echo -e "\n${YELLOW}Skipping... MINECECRAFT_SERVER_URL=\"none\"\n${NOCOLOR}"
+        exit
+    else
+        echo -e -n "${LIGHTGREEN}Deleting Old ${GREEN}${MINECRAFT_SERVER}${LIGHTGREEN}...${NOCOLOR}"
+        cd $SERVER_SETTINGS || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+        pwd;
+        if [ -f "${MINECRAFT_SERVER}" ] ; then
+            { rm "${MINECRAFT_SERVER}"
+            echo -e "${LIGHTGREEN} Deleted!${NOCOLOR}"
+            }
+        else { echo -e "${LIGHTGREEN} None Detected.${NOCOLOR}"
+            }
+        fi
+        #While doing tests, then using CTRL+C a few times, I've noticed that BuiltTools.jar was not being deleted
+        #Come to find out, BuildTools.jar had a ?. Manual deletion just in case...
+        if [ -f "${MINECRAFT_SERVER}?" ] ; then
+            command "rm ${MINECRAFT_SERVER}?"
+            echo " "
+        fi
+        echo -e -n "\n${LIGHTGREEN}Downloading Latest ${GREEN}${MINECRAFT_SERVER} ${LIGHTGREEN}From Minecraft.net. Please Wait.${NOCOLOR}"
+        i="3"
+        while [ "$i" -gt 0 ]; do
+            echo -e -n "${LIGHTGREEN} .${NOCOLOR}"
+            sleep 1
+            : $((i--))
+        done
+        echo -e "\n"
+        curl "${MINECRAFT_SERVER_URL}" -o "${MINECRAFT_SERVER}"
+        if [ -f "${MINECRAFT_SERVER}" ] ; then
+            { echo -e "\n${GREEN}Vanilla Minecraft ${LIGHTGREEN}Servers will be updated upon next ${YELLOW}Start${LIGHTGREEN}/${YELLOW}Restart${LIGHTGREEN}.${NOCOLOR}"
+            }
+        else {
+            echo -e "\n${RED}ERROR! ${GREEN}${MINECRAFT_SERVER} ${RED}Not Found!${NOCOLOR}"
+            echo -e "${LIGHTGREEN}   Did the download of the ${GREEN}${MINECRAFT_SERVER_URL}${RED} Fail?${NOCOLOR}"
+            echo -e "${LIGHTGREEN}   If so, update your ${GREEN}servers.cfg${LIGHTGREEN} in ${GREEN}${SERVER_SETTINGS}${NOCOLOR}"
+            echo -e "${LIGHTGREEN}     with ${GREEN}MINECRAFT_SERVER_URL=\"URL-To-CoreFileName.jar\" ${LIGHTGREEN}from ${GREEN}Minecraft.net/download${LIGHTGREEN}.${NOCOLOR}"
+            }
+        fi
+    fi
+}
+update_snapshot(){
+    if [ "${MINECRAFT_SNAPSHOT_URL}" == "none" ] ; then
+        echo -e "\n${YELLOW}Skipping... MINECECRAFT_SNAPSHOT_URL=\"none\"\n${NOCOLOR}"
+    else
+        echo -e -n "${LIGHTGREEN}Deleting Old ${GREEN}${MINECRAFT_SNAPSHOT}${LIGHTGREEN}... ${NOCOLOR}"
+        cd $SERVER_SETTINGS || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+        pwd;
+        if [ -f "${MINECRAFT_SNAPSHOT}" ] ; then
+            { rm "${MINECRAFT_SNAPSHOT}"
+            echo -e "${LIGHTGREEN} Deleted."
+            }
+        else { echo -e "${LIGHTGREEN} None Detected."
+            }
+        fi
+        if [ -f "${MINECRAFT_SNAPSHOT}?" ] ; then
+            command "rm ${MINECRAFT_SNAPSHOT}?"
+            echo " "
+        fi
+        echo -e -n "\n${LIGHTGREEN}Downloading Latest ${GREEN}${MINECRAFT_SNAPSHOT} ${LIGHTGREEN}From Minecraft.net. Please Wait.${NOCOLOR}"
+        i="3"
+        while [ "$i" -gt 0 ]; do
+            echo -e -n "${LIGHTGREEN} .${NOCOLOR}"
+            sleep 1
+            : $((i--))
+        done
+        echo -e "\n"
+        curl "${MINECRAFT_SNAPSHOT_URL}" -o "${MINECRAFT_SNAPSHOT}"
+        if [ -f "${MINECRAFT_SNAPSHOT}" ] ; then
+            { echo -e "\n${GREEN}Minecraft Snapshot ${LIGHTGREEN}Servers will be updated upon next ${YELLOW}Start${LIGHTGREEN}/${YELLOW}Restart${LIGHTGREEN}.${NOCOLOR}"
+            }
+        else {
+            echo -e "\n${RED}ERROR! ${GREEN}${MINECRAFT_SNAPSHOT} ${RED}Not Found!${NOCOLOR}"
+            echo -e "${LIGHTGREEN}   Did the download of the ${GREEN}${MINECRAFT_SNAPSHOT_URL}${RED} Fail?${NOCOLOR}"
+            echo -e "${LIGHTGREEN}   If so, update your ${GREEN}servers.cfg${LIGHTGREEN} in ${GREEN}${SERVER_SETTINGS}${NOCOLOR}"
+            echo -e "${LIGHTGREEN}     with ${GREEN}MINECRAFT_SNAPSHOT_URL=\"URL-To-CoreFileName.jar\"${LIGHTGREEN}.${NOCOLOR}"
+            }
+        fi
+    fi
+}
+update_bungee(){
+    if [ "${BUNGEECORD_URL}" == "none" ] ; then
+        echo -e "\n${YELLOW}Skipping... BUNGEECORD_URL=\"none\"\n${NOCOLOR}"
+    else
+        echo -e -n "${LIGHTGREEN}Deleting Old ${GREEN}${BUNGEECORD}... ${NOCOLOR}"
+        cd $SERVER_SETTINGS || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+        pwd;
+            if [ -f "${BUNGEECORD}" ] ; then
+            { rm "${BUNGEECORD}"
+            echo -e "${LIGHTGREEN} Deleted."
+            }
+        else { echo -e "${LIGHTGREEN}None Detected."
+            }
+        fi
+        if [ -f "${BUNGEECORD}?" ] ; then
+            command "rm ${BUNGEECORD}?"
+            echo " "
+        fi
+        echo -e -n "\n${LIGHTGREEN}Downloading Latest ${GREEN}${BUNGEECORD}${LIGHTGREEN} Please Wait.${NOCOLOR}"
+        i="3"
+        while [ "$i" -gt 0 ]; do
+            echo -e -n "${LIGHTGREEN} .${NOCOLOR}"
+            sleep 1
+            : $((i--))
+        done
+        echo -e "\n"
+        curl "${BUNGEECORD_URL}" -o "${BUNGEECORD}"
+        if [ -f "${BUNGEECORD}" ] ; then
+            { echo -e "\n${GREEN}${BUNGEECORD}${LIGHTGREEN} Servers will be updated upon next ${YELLOW}Start${LIGHTGREEN}/${YELLOW}Restart${LIGHTGREEN}.${NOCOLOR}"
+            }
+        else {
+            echo -e "\n${RED}ERROR! ${GREEN}${BUNGEECORD} ${RED}Not Found!${NOCOLOR}"
+            echo -e "${LIGHTGREEN}   Did the download of the ${GREEN}${BUNGEECORD_URL}${RED} Fail?${NOCOLOR}"
+            echo -e "${LIGHTGREEN}   If so, update your ${GREEN}servers.cfg${LIGHTGREEN} in ${GREEN}${SERVER_SETTINGS}${NOCOLOR}"
+            echo -e "${LIGHTGREEN}     with ${GREEN}BUNGEECORD_URL=\"URL-To-FileName.jar\"${LIGHTGREEN}.${NOCOLOR}"
+            }
+        fi
+    fi
+}
+show_screens(){
+    if [ "${SHOW_SCREENS}" == "True" ] || [ "${SHOW_SCREENS}" == "true" ] || [ "${SHOW_SCREENS}" == "TRUE" ]; then {
+        command "screen -ls"
+        echo -e "\n   ${LIGHTGREEN}Access Screen: ${YELLOW}service mcservers screen ID#${LIGHTGREEN}.${NOCOLOR}"
+        echo -e "   ${LIGHTGREEN}If a \"${YELLOW}Starting!${LIGHTGREEN}\" server isn't listed, it's offline."
+        echo -e "       ${LIGHTGREEN}If meant to be online, check the server log:${NOCOLOR}"
+        echo -e "       ${YELLOW}service mcservers log ID#${LIGHTGREEN}.${NOCOLOR}"
+        }
+    fi
+}
+yes_or_no(){
+    while [[ "$exist" != [yYnN] ]]
+    do
+        echo -e -n "${LIGHTGREEN}(${YELLOW}Y${LIGHTGREEN})es or (${YELLOW}N${LIGHTGREEN})o: ${NOCOLOR}"
+        read -r -s -n1 exist
+        case "$exist" in
+            "y"|"Y") { eval "$1"="Y"
+                };;
+            "n"|"N") { eval "$1"="N"
+                };;
+            *){ 
+                echo -e "\n\n${LIGHTGREEN}Please input (${YELLOW}Y${LIGHTGREEN})es or (${YELLOW}N${LIGHTGREEN})o only.${NOCOLOR}"
+                };;
+        esac
+    done
+    echo " "
+}
+not_a_number(){
+    echo -e "\n${LIGHTGREEN}Server ID ${RED}Must Be A Number!${NOCOLOR}"
+}
+create_serverscfg(){
+    echo -e "\n${RED}ERROR! ${GREEN}${SERVER_SETTINGS}/servers.cfg ${RED}Not Found!${NOCOLOR}"
+    echo -e "${YELLOW}Creating Default Template..."
+    cd $SERVER_SETTINGS ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+    {
+        echo '# Server Settings servers.cfg'
+        echo ' '
+        echo 'BUNGEECORD_URL="http://ci.md-5.net/job/BungeeCord/lastBuild/artifact/bootstrap/target/BungeeCord.jar"               #Newest Builds of Bungeecord.jar. Type "none" if you do not wish to download this.'
+        echo 'BUNGEECORD="BungeeCord.jar"                                                                                         #Choice name of saved and displayed .jar'
+        echo 'BUILDTOOLS_URL="https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar" #Newest Builds of Buildtools. Type "none" if you do not wish to download this.'
+        echo 'BUILDTOOLS_SPIGOT="spigot-1.8.8.jar"                                                                                #Make sure this is the exact name of the spigot file output from BuildTools.jar.'
+        echo 'BUILDTOOLS_OUTPUT="Spigot.jar"                                                                                      #Choice name of buildtools.jar output to be renamed to when copied out of buildtools.'
+        echo 'SPIGOT_LATEST="Spigot.jar"                                                                                          #Choice name of saved and displayed .jar'
+        echo 'MINECRAFT_SERVER_URL="https://s3.amazonaws.com/Minecraft.Download/versions/1.8.8/minecraft_server.1.8.8.jar"        #Choice version of minecraft_server.jar. Update URL when Mojang releases newer versions.  Type "none" if you do not wish to download this.'
+        echo 'MINECRAFT_SERVER="Minecraft_Server.jar"                                                                             #Choice name of saved and displayed .jar'
+        echo 'MINECRAFT_SNAPSHOT_URL="none"                                                                                       #Choice version of minecraft__snapshot_server.jar. Update URL to your choice. Can be used for custom versions of MC/Forge/Sponge/etc.  Type "none" if you do not wish to download this.'
+        echo 'MINECRAFT_SNAPSHOT="Minecraft_Snapshot_Server.jar"                                                                  #Choice name of saved and displayed .jar'
+        echo ' '
+        echo 'SHOW_SCREENS="True"                                                                                                 #Do you want to show the screen listings after server Start, Stop, and Restarts?'
+        echo ' '
+        echo '# Survival Server Settings'
+        echo 'SURVIVAL=0                                                                                                          #Server Group Unique Name. Must be different than other server groups. Increment the ID# for each additional server listing. Best if you keep these in order.'
+        echo 'SERVER_ENABLED[$SURVIVAL]="true"                                                                                    #Is this server allowed to start? If Yes, "true", otherwise "false."'
+        echo 'SERVER_NAME[$SURVIVAL]="Survival"                                                                                   #Server Group Display/Screen Name. Can be anything.'
+        echo 'SERVER_PATH[$SURVIVAL]="Survival"                                                                                   #Server root directory where the server_core.jar will be saved and executed? Directory must be in same location as this config.'
+        echo 'SERVER_CORE[$SURVIVAL]="Spigot.jar"                                                                                 #Server Core .jar name to run off of. Good use if using custom .jar files.'
+        echo 'SERVER_EXTRAS[$SURVIVAL]="none"                                                                                     #If none to place, place: "none". Ex: "rm /plugins/plugin/data.txt && command two;"'
+        echo 'START_ARGS[$SURVIVAL]="java -server -Xmx1024M -XX:MaxPermSize=128M -XX:+UseConcMarkSweepGC -jar"                    #Server starting arguments. Best only to change the -Xmx for memory use and server.jar at the end.'
+        echo 'SHUTDOWN_CMD[$SURVIVAL]="stop"                                                                                      #Command used to tell the server, nicely, to shut down via screen/console.'
+        echo 'MSG_CMD[$SURVIVAL]="say"                                                                                            #Command used to announce the SHUTDOWN_MSG1 and 2 prior to shutdown. Used for announced countdown.'
+        echo 'SHUTDOWN_SECONDS[$SURVIVAL]=20                                                                                      #Number of seconds until MSG_CMD is used to shut down. Each second repeates the shutdown_msgs as the countdown decreases.'
+        echo 'SHUTDOWN_MSG1[$SURVIVAL]="&KD&rShutting down in "                                                                   #First half of the shutdown message, followed by the number of seconds remaining.'
+        echo 'SHUTDOWN_MSG2[$SURVIVAL]=" Seconds&KD&r."                                                                           #Second half of the shutdown message, after the number of seconds remaining.'
+        echo ' '
+        echo '# BungeeCord Server Settings'
+        echo 'BUNGEE=1'
+        echo 'SERVER_ENABLED[$BUNGEE]=true'
+        echo 'SERVER_NAME[$BUNGEE]="BungeeCord"'
+        echo 'SERVER_PATH[$BUNGEE]="BungeeCord"'
+        echo 'SERVER_CORE[$BUNGEE]="BungeeCord.jar"'
+        echo 'SERVER_EXTRAS[$BUNGEE]="none"'
+        echo 'START_ARGS[$BUNGEE]="java -server -Xmx200M -XX:+UseConcMarkSweepGC -jar -DIReallyKnowWhatIaAmDoingISwear"'
+        echo 'SHUTDOWN_CMD[$BUNGEE]="end"'
+        echo 'MSG_CMD[$BUNGEE]="alert"'
+        echo 'SHUTDOWN_SECONDS[$BUNGEE]=5'
+        echo 'SHUTDOWN_MSG1[$BUNGEE]="Shutting down in "'
+        echo 'SHUTDOWN_MSG2[$BUNGEE]=" Seconds."'
+    } >> servers.cfg
+    
+    sleep 1
+    echo -e "${LIGHTGREEN}Config ${GREEN}servers.cfg${LIGHTGREEN} created in ${GREEN}$SERVFER_SETTIGNS${LIGHTGREEN}.${NOCOLOR}"
+}
+commandsyml_template(){
+    echo -e "\n${YELLOW}Creating commands.yml Template in ${SERVER_SETTINGS}/commandsTEMPLATE.yml${NOCOLOR}"
+    if [ -f $SERVER_SETTINGS/"commandsTEMPLATE.yml" ] ; then
+        echo -e "${YELLOW}CAUTION!${GREEN} commandsTEMPLATE.yml${LIGHTGREEN} Already Exists!${NOCOLOR}"
+        echo -e "${LIGHTGREEN}Do you wish to overwrite it?"
+        rm "${SERVER_SETTINGS}/commandsTEMPLATE.yml"
+        yes_or_no yn
+    else
+        yn="Y"
+    fi
+    case "$yn" in
+        Y)  { cd $SERVER_SETTINGS ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+                {
+                    echo '# This is the commands configuration file for Bukkit.'
+                    echo '# For documentation on how to make use of this file, check out the Bukkit Wiki at'
+                    echo '# http://wiki.bukkit.org/Commands.yml'
+                    echo '# '
+                    echo '# If you need help on this file, feel free to join us on irc or leave a message'
+                    echo '# on the forums asking for advice.'
+                    echo '# '
+                    echo '# IRC: #spigot @ irc.spi.gt'
+                    echo '#    (If this means nothing to you, just go to http://www.spigotmc.org/pages/irc/ )'
+                    echo '# Forums: http://www.spigotmc.org/'
+                    echo '# Bug tracker: http://www.spigotmc.org/go/bugs'
+                    echo ' '
+                    echo 'command-block-overrides: {} # Remove the {} if enabling/adding anything in the listing below it.'
+                    echo '#- summon'
+                    echo '#- tellraw'
+                    echo '#- setblock'
+                    echo '#- tp'
+                    echo '#- give'
+                    echo '#- clear'
+                    echo '#- scoreboard'
+                    echo '#- clone'
+                    echo '#- execute'
+                    echo '#- fill'
+                    echo '#- kill'
+                    echo '#- particle'
+                    echo '#- replaceitem'
+                    echo '#- setblock'
+                    echo '#- spawnpoint'
+                    echo '#- spreadplayers'
+                    echo '#- stats'
+                    echo '#- summon'
+                    echo '#- testfor'
+                    echo '#- testforblock'
+                    echo '#- testforblocks'
+                    echo '#- time'
+                    echo '#- trigger'
+                    echo '#- weather'
+                    echo '#- xp'
+                    echo '#- blockdata'
+                    echo '#- effect'
+                    echo '#- enchant'
+                    echo '#- entitydata'
+                    echo '#- gamerule'
+                    echo '#- particle'
+                    echo '#- playsound'
+                    echo 'aliases: {} # Remove the {} if enabling/adding anything in the listing below it.'
+                    echo '#  w:'
+                    echo '#  - mywarp $1-'
+                    echo '#  warp:'
+                    echo '#  - mywarp $1-'
+                    echo '#  warps:'
+                    echo '#  - mywarp list $1-'
+                    echo '#  setwarp:'
+                    echo '#  - mywarp create $1-'
+                    echo '#  delwarp:'
+                    echo '#  - mywarp delete $1-'
+                } >> commandsTEMPLATE.yml
+            echo -e "\n${LIGHTGREEN}Done!"
+            };;
+        N) {
+            echo -e "\n${GREEN}commandsTEMPLATE.tml ${LIGHTGREEN}has not be altered.${NOCOLOR}"
+        };;
+    esac
+}
+spigotyml_template(){
+    echo -e "\n${YELLOW}Creating spigot.yml Template in ${SERVER_SETTINGS}/spigotTEMPLATE.yml${NOCOLOR}"
+    if [ -f $SERVER_SETTINGS/"spigotTEMPLATE.yml" ] ; then
+        echo -e "${YELLOW}CAUTION!${GREEN} spigotTEMPLATE.yml${LIGHTGREEN} Already Exists!${NOCOLOR}"
+        echo -e "${LIGHTGREEN}Do you wish to overwrite it?"
+        rm "${SERVER_SETTINGS}/spigotTEMPLATE.yml"
+        yes_or_no yn
+    else
+        yn="Y"
+    fi
+    case "$yn" in
+        Y)  { cd $SERVER_SETTINGS || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+                {
+                    echo '# This is the main configuration file for Spigot.'
+                    echo '# As you can see, theres tons to configure. Some options may impact gameplay, so use'
+                    echo '# with caution, and make sure you know what each option does before configuring.'
+                    echo '# For a reference for any variable inside this file, check out the Spigot wiki at'
+                    echo '# http://www.spigotmc.org/wiki/spigot-configuration/'
+                    echo '# '
+                    echo '# If you need help with the configuration or have any questions related to Spigot,'
+                    echo '# join us at the IRC or drop by our forums and leave a post.'
+                    echo '# '
+                    echo '# IRC: #spigot @ irc.spi.gt ( http://www.spigotmc.org/pages/irc/ )'
+                    echo '# Forums: http://www.spigotmc.org/'
+                    echo ' '
+                    echo 'config-version: 8'
+                    echo 'settings:'
+                    echo '  save-user-cache-on-stop-only: false'
+                    echo '  bungeecord: false                    #Enable this if using BungeeCord'
+                    echo '  late-bind: true'
+                    echo '  sample-count: 12'
+                    echo '  player-shuffle: 1000'
+                    echo '  filter-creative-items: true'
+                    echo '  user-cache-size: 1000'
+                    echo '  int-cache-limit: 1024'
+                    echo '  moved-wrongly-threshold: 0.07'
+                    echo '  moved-too-quickly-threshold: 100.0'
+                    echo '  timeout-time: 60'
+                    echo '  restart-on-crash: true'
+                    echo '  restart-script: ./startserver.sh'
+                    echo '  netty-threads: 4'
+                    echo '  attribute:'
+                    echo '    maxHealth:'
+                    echo '      max: 2048.0'
+                    echo '    movementSpeed:'
+                    echo '      max: 2048.0'
+                    echo '    attackDamage:'
+                    echo '      max: 2048.0'
+                    echo '  debug: false'
+                    echo 'commands:'
+                    echo '  tab-complete: 2'
+                    echo '  log: true'
+                    echo '  spam-exclusions:'
+                    echo '  - /skill'
+                    echo '  silent-commandblock-console: true'
+                    echo '  replace-commands:'
+                    echo '  - setblock'
+                    echo '  - summon'
+                    echo '  - testforblock'
+                    echo '  - tellraw'
+                    echo '  #- give'
+                    echo '  #- clear'
+                    echo 'messages:'
+                    echo '  whitelist: [Bouncer]: We are sorry, but you are not...\n on THE list...'
+                    echo '  unknown-command: I am sorry, but I did not understand...'
+                    echo '  server-full: We cannot fit another warm body here...'
+                    echo '  outdated-client: Please update your client to {0}'
+                    echo '  outdated-server: You young wipper snappers and your upgrading...\n You are on {0}, we are not quite there yet!'
+                    echo '  restart: Please return in a moment.\nRebooting conciousness...'
+                    echo 'stats:'
+                    echo '  disable-saving: false'
+                    echo '  forced-stats:'
+                    echo '    achievement.openInventory: 1'
+                    echo 'global-api-cache: false'
+                    echo 'world-settings:'
+                    echo '  default:'
+                    echo '    verbose: false'
+                    echo '    growth:'
+                    echo '      cactus-modifier: 100'
+                    echo '      cane-modifier: 100'
+                    echo '      melon-modifier: 100'
+                    echo '      mushroom-modifier: 100'
+                    echo '      pumpkin-modifier: 100'
+                    echo '      sapling-modifier: 100'
+                    echo '      wheat-modifier: 100'
+                    echo '      netherwart-modifier: 100'
+                    echo '    entity-activation-range:'
+                    echo '      animals: 32'
+                    echo '      monsters: 32'
+                    echo '      misc: 16'
+                    echo '    entity-tracking-range:'
+                    echo '      players: 128'
+                    echo '      animals: 48'
+                    echo '      monsters: 48'
+                    echo '      misc: 32'
+                    echo '      other: 128'
+                    echo '    ticks-per:'
+                    echo '      hopper-transfer: 10'
+                    echo '    hopper-amount: 1'
+                    echo '    mob-spawn-range: 4'
+                    echo '    anti-xray:                 #anti-xray customized to not only hide ores, but detur world-download clients. Replaces all hidden blocks with random tnt and redstoneblocks. Big Boom!'
+                    echo '      enabled: true'
+                    echo '      engine-mode: 2'
+                    echo '      hide-blocks:'
+                    echo '      - 1'
+                    echo '      - 3'
+                    echo '      - 14'
+                    echo '      - 15'
+                    echo '      - 16'
+                    echo '      - 21'
+                    echo '      - 48'
+                    echo '      - 49'
+                    echo '      - 54'
+                    echo '      - 56'
+                    echo '      - 73'
+                    echo '      - 74'
+                    echo '      - 82'
+                    echo '      - 129'
+                    echo '      - 130'
+                    echo '      replace-blocks:'
+                    echo '      - 46'
+                    echo '      - 152'
+                    echo '    nerf-spawner-mobs: false'
+                    echo '    random-light-updates: true'
+                    echo '    save-structure-info: true'
+                    echo '    max-bulk-chunks: 12'
+                    echo '    max-entity-collisions: 6'
+                    echo '    dragon-death-sound-radius: 1000'
+                    echo '    hunger:'
+                    echo '      walk-exhaustion: 0.2'
+                    echo '      sprint-exhaustion: 0.8'
+                    echo '      combat-exhaustion: 0.3'
+                    echo '      regen-exhaustion: 3.0'
+                    echo '    max-tnt-per-tick: 4'
+                    echo '    max-tick-time:'
+                    echo '      tile: 20'
+                    echo '      entity: 25'
+                    echo '    item-despawn-rate: 18000'
+                    echo '    merge-radius:'
+                    echo '      item: 4.0'
+                    echo '      exp: 4.0'
+                    echo '    arrow-despawn-rate: 1800'
+                    echo '    enable-zombie-pigmen-portal-spawns: true'
+                    echo '    wither-spawn-sound-radius: 512'
+                    echo '    view-distance: 10'
+                    echo '    hanging-tick-frequency: 100'
+                    echo '    zombie-aggressive-towards-villager: true'
+                    echo '    chunks-per-tick: 100'
+                    echo '    clear-tick-list: true'
+                    echo '    hopper-alt-ticking: true'
+                } >> spigotTEMPLATE.yml
+            echo -e "\n${LIGHTGREEN}Done!"
+            };;
+        N) {
+            echo -e "\n${GREEN}spigotTEMPLATE.tml ${LIGHTGREEN}has not be altered.${NOCOLOR}"
+        };;
+    esac
+}
+
+#helpyml_template(){              #At this time, I have no information to go off of for a decent help setup. Leaving off script until then.
+#    echo -e "\n${YELLOW}Creating help.yml Template in ${SERVER_SETTINGS}/helpTEMPLATE.yml${NOCOLOR}"
+#    if [ -f $SERVER_SETTINGS/"helpTEMPLATE.yml" ] ; then
+#        echo -e "${YELLOW}CAUTION!${GREEN} helpTEMPLATE.yml${LIGHTGREEN} Already Exists!${NOCOLOR}"
+#        echo -e "${LIGHTGREEN}Do you wish to overwrite it?"
+#        rm "${SERVER_SETTINGS}/helpTEMPLATE.yml"
+#        yes_or_no yn
+#    else
+#        yn="Y"
+#    fi
+#    case "$yn" in
+#        Y)  { cd $SERVER_SETTINGS ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+#                {
+#                    echo ''
+#                } >> helpTEMPLATE.yml
+#            echo -e "\n${LIGHTGREEN}Done!"
+#            };;
+#        N) {
+#            echo -e "\n${GREEN}helpTEMPLATE.tml ${LIGHTGREEN}has not be altered.${NOCOLOR}"
+#        };;
+#    esac
+#}
+bukkityml_template(){
+    echo -e "\n${YELLOW}Creating bukkit.yml Template in ${SERVER_SETTINGS}/bukkitTEMPLATE.yml${NOCOLOR}"
+    if [ -f $SERVER_SETTINGS/"bukkitTEMPLATE.yml" ] ; then
+        echo -e "${YELLOW}CAUTION!${GREEN} bukkitTEMPLATE.yml${LIGHTGREEN} Already Exists!${NOCOLOR}"
+        echo -e "${LIGHTGREEN}Do you wish to overwrite it?"
+        rm "${SERVER_SETTINGS}/bukkitTEMPLATE.yml"
+        yes_or_no yn
+    else
+        yn="Y"
+    fi
+    case "$yn" in
+        Y)  { cd $SERVER_SETTINGS ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+                {
+                    echo '# This is the main configuration file for Bukkit.'
+                    echo '# As you can see, theres actually not that much to configure without any plugins.'
+                    echo '# For a reference for any variable inside this file, check out the Bukkit Wiki at'
+                    echo '# http://wiki.bukkit.org/Bukkit.yml'
+                    echo '# '
+                    echo '# If you need help on this file, feel free to join us on irc or leave a message'
+                    echo '# on the forums asking for advice.'
+                    echo '# '
+                    echo '# IRC: #spigot @ irc.spi.gt'
+                    echo '#    (If this means nothing to you, just go to http://www.spigotmc.org/pages/irc/ )'
+                    echo '# Forums: http://www.spigotmc.org/'
+                    echo '# Bug tracker: http://www.spigotmc.org/go/bugs'
+                    echo ' '
+                    echo ' '
+                    echo 'settings:'
+                    echo '  allow-end: true'
+                    echo '  warn-on-overload: true'
+                    echo '  permissions-file: permissions.yml'
+                    echo '  update-folder: UpdatePluginsOnNextServerStart'
+                    echo '  use-exact-login-location: true'
+                    echo '  world-container:'
+                    echo '  plugin-profiling: false'
+                    echo '  connection-throttle: 5000'
+                    echo '  query-plugins: true'
+                    echo '  deprecated-verbose: default'
+                    echo '  shutdown-message: Server going down for a bit. Please visit Site for information.'
+                    echo 'spawn-limits:'
+                    echo '  monsters: 75'
+                    echo '  animals: 45'
+                    echo '  water-animals: 25'
+                    echo '  ambient: 45'
+                    echo 'chunk-gc:'
+                    echo '  period-in-ticks: 600'
+                    echo '  load-threshold: 100'
+                    echo 'ticks-per:'
+                    echo '  animal-spawns: 400'
+                    echo '  monster-spawns: 10'
+                    echo '  autosave: 6000'
+                    echo 'database:'
+                    echo '  username: spigotserver314'
+                    echo '  isolation: SERIALIZABLE'
+                    echo '  driver: org.sqlite.JDBC'
+                    echo '  password: cookoo4tootwo'
+                    echo '  url: jdbc:sqlite:{DIR}{NAME}.db'
+                    echo '#worlds:'
+                    echo '#  world1:'
+                    echo '#  generator: CleanroomGenerator:10,stone,20,dirt,1,grass'
+                } >> bukkitTEMPLATE.yml
+            echo -e "\n${LIGHTGREEN}Done!"
+            };;
+        N) {
+            echo -e "\n${GREEN}bukkitTEMPLATE.tml ${LIGHTGREEN}has not be altered.${NOCOLOR}"
+        };;
+    esac
+}
+serverproperties_template(){
+    echo -e "\n${YELLOW}Creating server.properties Template in ${SERVER_SETTINGS}/serverTEMPLATE.properties${NOCOLOR}"
+    if [ -f $SERVER_SETTINGS/"serverTEMPLATE.properties" ] ; then
+        echo -e "${YELLOW}CAUTION!${GREEN} serverTEMPLATE.properties${LIGHTGREEN} Already Exists!${NOCOLOR}"
+        echo -e "${LIGHTGREEN}Do you wish to overwrite it?"
+        rm "${SERVER_SETTINGS}/serverTEMPLATE.properties"
+        yes_or_no yn
+    else
+        yn="Y"
+    fi
+    case "$yn" in
+        Y)  { cd $SERVER_SETTINGS ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+                {
+                    echo '#All variables listed are explained at: http://minecraft.gamepedia.com/Server.properties'
+                    echo '#Minecraft server properties'
+                    echo ' '
+                    echo 'generator-settings='
+                    echo 'op-permission-level=1                         #Setting to 1 for new server owners protection'
+                    echo 'allow-nether=true'
+                    echo 'resource-pack-hash='
+                    echo 'level-name=helloworld'
+                    echo 'enable-query=false'
+                    echo 'allow-flight=false'
+                    echo 'announce-player-achievements=false            #I personally find this annoying on servers. Default is true.'
+                    echo 'server-port=25565                             #Set this to a port other than 25565 is running BungeeCord!'
+                    echo 'max-world-size=29999984'
+                    echo 'level-type=DEFAULT'
+                    echo 'enable-rcon=false                             #For the love of god, keep this false!'
+                    echo 'rcon.password=asdf1238asd168                  #If rcon is enabled, CHANGE THIS to something UNIQUE, and HARD to GUESS!'
+                    echo 'rcon.port=25575                               #If rcon is enabled, CHANGE THIS to something UNIQUE, Unused, and HARD to GUESS!'
+                    echo 'level-seed='
+                    echo 'force-gamemode=true'
+                    echo 'server-ip='
+                    echo 'network-compression-threshold=256'
+                    echo 'max-build-height=256                          #Did you know there is no max limit for this setting? Just dont kill your server!'
+                    echo 'spawn-npcs=true'
+                    echo 'white-list=false'
+                    echo 'spawn-animals=true'
+                    echo 'snooper-enabled=true                          #Leave this to true if youd like to help Mojang improve. Send anonomous details of server stats to Mojang.'
+                    echo 'online-mode=true                              #Set this to false if running through BungeeCord!'
+                    echo 'resource-pack='
+                    echo 'pvp=true'
+                    echo 'difficulty=1'
+                    echo 'enable-command-block=true'
+                    echo 'gamemode=0'
+                    echo 'player-idle-timeout=30                        #30 minutes of inactivity will kick player.'
+                    echo 'max-players=10'
+                    echo 'max-tick-time=60000'
+                    echo 'spawn-monsters=true'
+                    echo 'spawn-animals=true'
+                    echo 'generate-structures=true'
+                    echo 'view-distance=7'
+                    echo 'motd=A Brand New Minecraft Server!'
+                    echo 'use-native-transport=true'
+                    echo 'spawn-protection=16                           #0 disables spawn protection, 1 protects a 3x3 area. Imagine the size of the default 16! No max size. Only OPs can edit in this protection. If no OPs in the OPs listing, this option is disabled.'
+                    echo 'hardcore=false'
+                } >> serverTEMPLATE.properties
+            echo -e "\n${LIGHTGREEN}Done!"
+            };;
+        N) {
+            echo -e "\n${GREEN}serverTEMPLATE.properties ${LIGHTGREEN}has not be altered.${NOCOLOR}"
+        };;
+    esac
+}
+
+# Service Start Arguments
+SERVERS=${#SERVER_NAME[@]}
+case "$1" in
+    start){     #Until I find a better way to have start/stop the server upon system start/stop, going to the basics.
+        for (( i = 0; i < $SERVERS; i++ )) ; do
+            start_servers $i skip
+            sleep 2
+        done
+    };;
+    stop){      #Until I find a better way to have start/stop the server upon system start/stop, going to the basics.
+        for (( i = 0; i < $SERVERS; i++ )) ; do
+            stop_servers $i
+            sleep 5
+        done
+    };;
+    screen){ 
+        if [[ "$2" =~ ^[0-9]+$ ]] ; then
+            if is_running "$2" ; then
+                echo -e "\n${YELLOW}CAUTION! ${LIGHTGREEN}To Exit Screen: Hold ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}A${LIGHTGREEN}, let go and hit ${YELLOW}D${LIGHTGREEN}.${NOCOLOR}"
+                read -s -n1 exist
+                command "screen -x ${SERVER_NAME[$2]}"
+                echo " "
+            else
+                echo -e "\n${LIGHTGREEN}Server ${GREEN}$2 ${SERVER_NAME[$2]}${LIGHTGREEN}: ${RED}Offline.${NOCOLOR}"
+            fi
+        else
+            not_a_number
+        fi
+    };;
+    backup){ 
+        if [ "$2" == "clean" ] ; then
+            {
+            if [[ "$3" =~ ^[0-9]+$ ]] ; then
+                echo -e "Clean out backups older than $3 days?${NOCOLOR}"
+                yes_or_no yn
+                case "$yn" in
+                    Y) { find ${SERVER_SETTINGS}/ManualBackups* -mtime +"$3" -exec rm {} \;
+                        };;
+                    N) { echo -e "\n${LIGHTGREEN}Backup Cleaning Discontinued.${NOCOLOR}"
+                        };;
+                esac
+            else
+                echo -e "\n${LIGHTGREEN}Backup Clean setup will clean out backups older than User Choice days.${NOCOLOR}"
+            fi
+            }
+        else
+            {
+            if [[ "$2" =~ ^[0-9]+$ ]] ; then
+                if is_running "$2" ; then
+                    echo -e "\n${YELLOW}CAUTION! ${LIGHTGREEN}Not Advised to manually backup a server while it's running!${NOCOLOR}"
+                else
+                    echo -e "\n${LIGHTGREEN}Server ${GREEN}$2 ${SERVER_NAME[$2]}${LIGHTGREEN}: ${RED}Offline.${NOCOLOR}"
+                fi
+                echo -e "\n${LIGHTGREEN}Checking directory size of ${SERVER_NAME[$2]}... ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}C ${LIGHTGREEN}To Cancel.${NOCOLOR}"
+                command "du -hs ${SERVER_SETTINGS}/${SERVER_PATH[$2]}"
+                echo -e "\n${LIGHTGREEN}The size of ${GREEN}${SERVER_SETTINGS}/ManualBackups${LIGHTGREEN} is...${NOCOLOR}"
+                command "du -hs ${SERVER_SETTINGS}/ManualBackups"
+                echo -e -n "\n${LIGHTGREEN}Do you wish to backup the WHOLE directory/server?${NOCOLOR} "
+                yes_or_no yn
+                echo " "
+                case "$yn" in
+                    Y){
+                        echo -e "${LIGHTGREEN}Backing up ${GREEN}${SERVER_NAME[$2]}${LIGHTGREEN}. . .${NOCOLOR}"
+                        env GZIP=-9 tar czf "${SERVER_SETTINGS}/ManualBackups/${SERVER_PATH[$2]}-$(date +%d-%m-%Y--%H-%M).tar.gz" "${SERVER_SETTINGS}/${SERVER_PATH[$2]}"
+                        echo -e "${LIGHTGREEN}DONE!${NOCOLOR}"
+                        echo -e "\n${LIGHTGREEN}The size of ${GREEN}${SERVER_SETTINGS}/ManualBackups${LIGHTGREEN} is...${NOCOLOR}"
+                        command "du -hs ${SERVER_SETTINGS}/ManualBackups"
+                        };;
+                    N){
+                        echo -e "${LIGHTGREEN}Backup Cancelled for ${GREEN}${SERVER_NAME[$2]}${LIGHTGREEN}.${NOCOLOR}"
+                        };;
+                esac
+            else
+                not_a_number
+            fi
+            }
+        fi
+    };;
+    create){
+        case "$2" in
+            server.properties){
+                serverproperties_template
+            };;
+            bukkit.yml){
+                bukkityml_template
+            };;
+            spigot.yml){
+                spigotyml_template
+            };;
+            #help.yml){     #Leaving off until a good help.yml setup comes around. I have it disabled on my servers. Suggestions?
+            #    helpyml_template
+            #};;
+            commands.yml){
+                commandsyml_template
+            };;
+            help|*){
+                echo -e "\n${LIGHTGREEN}Choices (Case SeNsItIvE!):${NOCOLOR}"
+                echo -e "   ${YELLOW} server.properties${LIGHTGREEN} | ${YELLOW} bukkit.yml${LIGHTGREEN} | ${YELLOW} commands.yml${LIGHTGREEN} | ${YELLOW} spigot.yml${NOCOLOR}\n"
+            };;
+        esac
+        echo -e "${LIGHTGREEN}To modify the default templates, ${YELLOW}service mcservers edit nameTEMPLATE.yml${NOCOLOR}\n"
+        sleep 2
+    };;
+    edit|view){ 
+        echo -e "\n${YELLOW}CAUTION! ${LIGHTGREEN}Never Use TAB while editing. Use Spaces!${NOCOLOR}"
+        echo -e "   ${LIGHTGREEN}If the editor shows blank, the Server ID does not contain that file.${NOCOLOR}"
+        echo -e "${LIGHTGREEN}To Exit View/Edit: Hold ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}X${LIGHTGREEN}, let go and hit ${YELLOW}Y${LIGHTGREEN}/${YELLOW}N${LIGHTGREEN} To Save Changes or Not.${NOCOLOR}"
+        read -s -n1 exist
+        case "$2" in
+            mcservers) {
+                if [ -f /etc/init.d/mcservers ] ; then     #Hey, I know this is stupid, but for reduntcy and possibility of the script running elsewhere, I'm placing a file check here.
+                    command "nano /etc/init.d/mcservers"
+                else
+                    echo -e "${GREEN}/etc/init.d/mcservers ${YELLOW}Doen't Exist...?!${NOCOLOR}"
+                    echo -e "    ${LIGHTGREEN}How are you running this!? Please edit this script to match it's location.${NOCOLOR}"
+                fi
+              };;
+            servers.cfg){
+                if [ -f $SERVER_SETTINGS/"servers.cfg" ] ; then
+                    command "nano ${SERVER_SETTINGS}/servers.cfg"
+                else
+                    echo -e "${GREEN}${SERVER_SETTINGS}/servers.cfg ${YELLOW}Doen't Exist...?!${NOCOLOR}"
+                    echo -e "    ${LIGHTGREEN}How are you running this!? Please edit this script to match it's location!${NOCOLOR}"
+                fi
+            };;
+            server.properties|bukkit.yml|spigot.yml|config.yml|eula.txt|help.yml|commands.yml){ 
+                if [[ "$3" =~ ^[0-9]+$ ]] ; then
+                    if [ -f $SERVER_SETTINGS/"${SERVER_PATH[$3]}/$2" ] ; then
+                        command "nano $SERVER_SETTINGS/${SERVER_PATH[$3]}/$2"
+                    else
+                        echo -e "${LIGHTGREEN}$SERVER_SETTINGS/${SERVER_PATH[$3]}/$2 ${YELLOW}Doen't Exist!${NOCOLOR}"
+                    fi
+                else
+                    not_a_number
+                fi
+            };;
+            log){ 
+                if [[ "$3" =~ ^[0-9]+$ ]] ; then
+                    echo -e "         \n${LIGHTGREEN}This Only Shows The LATEST.log file.${NOCOLOR}"
+                    echo -e "         ${LIGHTGREEN}Previous logs need to be extracted from their respective archives.${NOCOLOR}"
+                    echo -e -n "         ${LIGHTGREEN}Press any key to continue...${NOCOLOR}"
+                    read -s -n1 exist
+                    command "nano $SERVER_SETTINGS/${SERVER_PATH[$3]}/logs/latest.log"
+                else
+                    not_a_number
+                fi
+            };;
+            serverTEMPLATE.properties|bukkitTEMPLATE.yml|spigotTEMPLATE.yml|commandsTEMPLATE.yml){ 
+                if [ -f $SERVER_SETTINGS/"$2" ] ; then
+                    command "nano $SERVER_SETTINGS/$2"
+                else
+                    echo -e "${LIGHTGREEN}$SERVER_SETTINGS/$2 ${YELLOW}Doen't Exist!${NOCOLOR}"
+                fi
+            };;
+            *|help){
+                echo -e "\n${LIGHTGREEN}Choices (Case SeNsItIvE!):${NOCOLOR}"
+                echo -e "   ${YELLOW} servers.cfg${LIGHTGREEN} | ${YELLOW} server.properties ID#${LIGHTGREEN} | ${YELLOW} bukkit.yml ID#${LIGHTGREEN} | ${YELLOW} commands.yml ID#${LIGHTGREEN} | ${YELLOW} help.yml ID#${LIGHTGREEN} | ${YELLOW} spigot.yml ID#${LIGHTGREEN} | ${YELLOW} eula.txt ID#${LIGHTGREEN} | ${YELLOW} log ID#${NOCOLOR}"
+                echo -e "   ${LIGHTGREEN}Example: ${YELLOW}service mcservers edit log 1${NOCOLOR}"
+                echo -e "${LIGHTGREEN}A standard server file doesn't exist? Notify the author, or edit the script.${NOCOLOR}"
+                echo -e "${LIGHTGREEN}    Otherwise, ${YELLOW}nano ${LIGHTGREEN}or ${YELLOW}vim $SERVER_SETTINGS/file/location/filename.cfg${NOCOLOR}"
+              };;
+        esac
+    };;
+    overwrite|import){
+        case "$2" in
+            server.properties|bukkit.yml|spigot.yml|commands.yml){
+                templatefile=""
+                if [ "$2" == "server.properties" ] ; then
+                    templatefile="serverTEMPLATE.properties"
+                elif [ "$2" == "bukkit.yml" ] ; then
+                    templatefile="bukkitTEMPLATE.yml"
+                #elif [ "$2" == "help.yml" ] ; then
+                #    templatefile="helpTEMPLATE.yml"
+                elif [ "$2" == "spigot.yml" ] ; then
+                    templatefile="spigotTEMPLATE.yml"
+                elif [ "$2" == "commands.yml" ] ; then
+                    templatefile="commandsTEMPLATE.yml"
+                fi
+                if [ -f $SERVER_SETTINGS/"${templatefile}" ] ; then
+                    if [[ "$3" =~ ^[0-9]+$ ]] ; then
+                        if [ -d $SERVER_SETTINGS/"${SERVER_PATH[$3]}" ] ; then
+                            echo -e "\n${LIGHTGREEN}Are you sure you want to copy $2\'s template to ${SERVER_PATH[$3]}?${NOCOLOR}"
+                            yes_or_no yn
+                            case "$yn" in
+                                Y){
+                                    cd "${SERVER_SETTINGS}" ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+                                    cp "${templatefile}" "${SERVER_PATH[$3]}/$2"
+                                    echo -e "\n${LIGHTGREEN}$2${LIGHTGREEN} in ${GREEN}${SERVER_PATH[$3]}${LIGHTGREEN} has been overwritten by ${GREEN}${templatefile}${LIGHTGREEN}.${NOCOLOR}"
+                                };;
+                                N){
+                                    echo -e "\n${GREEN}$2${LIGHTGREEN} in ${GREEN}${SERVER_PATH[$3]}${LIGHTGREEN} has not been overwritten.${NOCOLOR}"
+                                };;
+                            esac
+                        else
+                            echo -e "\n${GREEN}$SERVER_SETTINGS/${SERVER_PATH[$3]} ${YELLOW}Doen't Exist!${NOCOLOR}"
+                            echo -e "${LIGHTGREEN}Please start/create ${GREEN}${SERVER_NAME[$3]} ${LIGHTGREEN}first.${NOCOLOR}"
+                        fi
+                    else
+                        not_a_number
+                    fi
+                else
+                    echo -e "\n${LIGHTGREEN}$SERVER_SETTINGS/$2 ${YELLOW}Doen't Exist!${NOCOLOR}"
+                    echo -e "${LIGHTGREEN}Create the template with: ${YELLOW}service mcservers create $2${NOCOLOR}"
+                fi
+            };;
+            help|*){
+                echo -e "\n${LIGHTGREEN}Choices (Case SeNsItIvE!):${NOCOLOR}"
+                echo -e "${LIGHTGREEN}   |   ${YELLOW} server.properties ID#${LIGHTGREEN}   |   ${YELLOW} bukkit.yml$ ID#${LIGHTGREEN}   |${NOCOLOR}"
+                echo -e "${LIGHTGREEN}   |   ${YELLOW} commands.yml ID#     ${LIGHTGREEN}   |   ${YELLOW} spigot.yml ID#${LIGHTGREEN}    |${NOCOLOR}"
+            };;
+        esac
+        echo -e "\n${LIGHTGREEN}To modify the files in the servers or templates, ${YELLOW}service mcservers edit${NOCOLOR}"
+        sleep 2
+    };;
+    server|servers){
+        case "$2" in
+            "start"){
+                echo " "
+                if [[ "$3" =~ ^[0-9]+$ ]] ; then
+                    if [ "$3" ] ; then
+                        if [ "$3" == "all" ] ; then {
+                            for (( i = 0; i < $SERVERS; i++ )) ; do
+                                start_servers $i "$4"
+                                sleep 2
+                            done
+                            echo " "
+                            show_screens
+                        }
+                        else { start_servers "$3"
+                                echo " "
+                                show_screens
+                        }
+                        fi
+                    fi
+                else
+                    not_a_number
+                fi
+             };;
+            "stop"){
+                echo " "
+                if [[ "$3" =~ ^[0-9]+$ ]] ; then
+                    if [ "$3" ] ; then
+                        if [ "$3" == "all" ] ; then {
+                            for (( i = 0; i < $SERVERS; i++ )) ; do
+                                stop_servers $i
+                                sleep 5
+                            done
+                            echo " "
+                            show_screens
+                        }
+                        else { 
+                            stop_servers "$3"
+                            echo " "
+                            show_screens
+                        }
+                        fi
+                    fi
+                else
+                    not_a_number
+                fi
+            };;
+            restart){
+                echo " "
+                if [[ "$3" =~ ^[0-9]+$ ]] ; then
+                    if [ "$3" ] ; then
+                        if [ "$3" == "all" ] ; then {
+                            for (( i = 0; i < $SERVERS; i++ )) ; do
+                                restart_servers $i "$4"
+                                sleep 5
+                            done
+                            echo " "
+                            show_screens
+                        }
+                        else { restart_servers "$3"
+                            echo " "
+                            show_screens
+                        }
+                        fi
+                    fi
+                else
+                    not_a_number
+                fi
+            };;
+            status){
+                echo " "
+                if [[ "$3" =~ ^[0-9]+$ ]] ; then
+                    if [ "$3" ] ; then {
+                        get_running "$3"
+                        echo " "
+                        show_screens
+                    }
+                    else
+                        not_a_number
+                    fi
+                else { 
+                    for (( i = 0; i < $SERVERS; i++ )) ; do
+                        get_running $i
+                        sleep 1
+                    done
+                    echo " "
+                    show_screens
+                    }
+                fi
+            };;
+            *){ echo -e "\n${LIGHTGREEN}Choices: "
+                echo -e "${LIGHTGREEN}   |   ${YELLOW}Start${LIGHTGREEN}   |   ${YELLOW}Stop{LIGHTGREEN}   |${NOCOLOR}"
+                echo -e "${LIGHTGREEN}   |   ${YELLOW}Restart${LIGHTGREEN} |   ${YELLOW}Status{LIGHTGREEN} |${NOCOLOR}"
+                echo -e "   ${LIGHTGREEN}Followed by Server ${YELLOW}ID# ${LIGHTGREEN}.${NOCOLOR}"
+                echo -e "${LIGHTGREEN}Example: ${YELLOW}service mcservers server start 1 ${LIGHTGREEN}(or replace ${YELLOW}1 ${LIGHTGREEN}with ${YELLOW}All${LIGHTGREEN}.)${NOCOLOR}"
+                echo -e "${LIGHTGREEN}IDs in: ${YELLOW}service mcservers server status${NOCOLOR}"
+            }
+        esac
+    };;
+    update){
+        case "$2" in
+            spigot) { 
+                    echo -e "\n${LIGHTGREEN}Do you want to update your server ${GREEN}${BUILDTOOLS_SPIGOT}${LIGHTGREEN} file?${NOCOLOR}"
+                    yes_or_no yn
+                    echo " "
+                    case "$yn" in
+                        Y){
+                            if [ "$3" == "clean" ] ; then
+                                update_spigot "clean"
+                            else
+                                update_spigot "noclean"
+                            fi
+                            };;
+                        N){ echo -e "${GREEN}${BUILDTOOLS_SPIGOT} ${LIGHTGREEN}Unchanged.${NOCOLOR}"
+                            echo " "
+                            };;
+                    esac
+                    };;
+            minecraft|vanilla) { 
+                    echo -e "\n${LIGHTGREEN}Do you want to update your server ${GREEN}${MINECRAFT_SERVER}${LIGHTGREEN} file?${NOCOLOR}"
+                    yes_or_no yn
+                    echo " "
+                    case "$yn" in
+                        Y){
+                            update_minecraft
+                            };;
+                        N){ echo -e "${GREEN}${MINECRAFT_SERVER} ${LIGHTGREEN}Unchanged.${NOCOLOR}"
+                            };;
+                    esac
+                    };;
+            snapshot) { 
+                    echo -e "\n${LIGHTGREEN}Do you want to update your server ${GREEN}${MINECRAFT_SNAPSHOT}${LIGHTGREEN} file?${NOCOLOR}"
+                    yes_or_no yn
+                    echo " "
+                    case "$yn" in
+                        Y){
+                            update_snapshot
+                            };;
+                        N){ echo -e "${GREEN}${MINECRAFT_SNAPSHOT} ${LIGHTGREEN}Unchanged.${NOCOLOR}"
+                            };;
+                        esac
+                    };;
+            bungee|bungeecord) { 
+                    echo -e "\n${LIGHTGREEN}Do you want to update your ${GREEN}${BUNGEECORD} ${LIGHTGREEN}file?${NOCOLOR}"
+                    yes_or_no yn
+                    echo " "
+                    case "$yn" in
+                        Y) { echo -e "${LIGHTGREEN}Updating to latest ${GREEN}${BUNGEECORD} ${LIGHTGREEN}Build...${NOCOLOR}"
+                                update_bungee
+                            };;
+                        N){ echo -e "${GREEN}${BUNGEECORD} ${LIGHTGREEN}Unchanged.${NOCOLOR}"
+                            };;
+                    esac
+                    };;
+            all) { 
+                    echo -e "\n${LIGHTGREEN}Do you want to update ${YELLOW}ALL ${LIGHTGREEN}files?${NOCOLOR}"
+                    echo -e "     ${RED}All URLs Should Be Updated in $SERVER_SETTINGS/servers.cfg${NOCOLOR}\n"
+                    yes_or_no yn
+                    case "$yn" in
+                        Y) { echo -e "${LIGHTGREEN}Updating All Files to latest Builds...${NOCOLOR}"
+                            if [ "$3" == "clean" ] ; then
+                                update_spigot "clean"
+                            else
+                                update_spigot "noclean"
+                            fi
+                            update_minecraft
+                            update_snapshot
+                            update_bungee
+                            };;
+                        N){  echo -e "${LIGHTGREEN}No Files Unchanged.${NOCOLOR}"
+                            };;
+                    esac
+                    };;
+            *){ echo -e "\n${LIGHTGREEN}Choices: "
+                echo -e "${LIGHTGREEN}   |   ${YELLOW}Spigot${LIGHTGREEN}   |   ${YELLOW}Minecraft${LIGHTGREEN}   |${NOCOLOR}"
+                echo -e "${LIGHTGREEN}   |   ${YELLOW}Snapshot${LIGHTGREEN} |   ${YELLOW}Bungeecord${LIGHTGREEN}  |   ${YELLOW}All${NOCOLOR}"
+                echo -e "${LIGHTGREEN}Example: ${YELLOW}service mcservers update minecraft${NOCOLOR}"
+                echo -e "   ${LIGHTGREEN}Results in updating/downloading the minecraft core server file.${NOCOLOR}"
+                echo -e "${LIGHTGREEN}+${YELLOW}Clean${LIGHTGREEN} after ${YELLOW}Spigot${LIGHTGREEN} or ${YELLOW}All${LIGHTGREEN} will wipe BuildTools directory before udpating.${NOCOLOR}"
+                echo -e "${LIGHTGREEN}Example: ${YELLOW}service mcservers update spigot clean${NOCOLOR}"
+                    };;
+            esac
+        };;
+    help|*) {
+            echo -e "\n${LIGHTGREEN}Below Effect All Servers Listed In ${GREEN}$SERVER_SETTINGS/servers.cfg${LIGHTGREEN}.${NOCOLOR}"
+            echo -e "\n${LIGHTGREEN} Server +"
+            echo -e "   ${LIGHTGREEN} Status (ID#)${NOCOLOR}         - ${LIGHTGREEN}Status and ID# of all servers.${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} Start ID#/All${NOCOLOR}        - ${LIGHTGREEN}Start select server.${NOCOLOR}"             #Hidden note: If mcservers server start all skip, script will skip the user answer to create missing server_path directories that are missing.
+            echo -e "   ${LIGHTGREEN} Stop ID#/All${NOCOLOR}         - ${LIGHTGREEN}Stop select server.${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} Restart ID#/All${NOCOLOR}      - ${LIGHTGREEN}Restart select server.${NOCOLOR}"           #Hidden note: If mcservers server start all skip, script will skip the user answer to create missing server_path directories that are missing.
+            echo -e "\n${LIGHTGREEN} Update +${NOCOLOR}                  - ${LIGHTGREEN}Update to latest releases.${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} Spigot${NOCOLOR}               - ${LIGHTGREEN}Update Spigot.jar to Latest Build.${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} Minecraft${NOCOLOR}            - ${LIGHTGREEN}Download Minecraft_Server.jar.${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} Snapshot${NOCOLOR}             - ${LIGHTGREEN}Download Snapshot.jar.${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} Bungeecord${NOCOLOR}           - ${LIGHTGREEN}Download latest Bungeecord.jar.${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} All${NOCOLOR}                  - ${LIGHTGREEN}Update all of the above.${NOCOLOR}"
+            echo -e "\n${LIGHTGREEN} Screen ID#${NOCOLOR}              - ${LIGHTGREEN}View screen of Server ID.${NOCOLOR}"
+            echo -e "\n${LIGHTGREEN} Configuration Management"
+            echo -e "   ${LIGHTGREEN} Create${NOCOLOR}               - ${LIGHTGREEN}Create Template Files for MC Servers.${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} Edit${NOCOLOR}                 - ${LIGHTGREEN}View/Edit Template or Server ID files.${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} Overwrite${NOCOLOR}            - ${LIGHTGREEN}Overwrite Server's file with Template file.${NOCOLOR}"
+            echo -e "\n${LIGHTGREEN} Backup ID#${NOCOLOR}              - ${LIGHTGREEN}Backup WHOLE Server ID, or clean out old backups.${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} Clean Days#${NOCOLOR}          - ${LIGHTGREEN}Clean out backups exceeding # Days Old.${NOCOLOR}"
+            echo -e "\n${LIGHTGREEN} Help${NOCOLOR}                    - ${LIGHTGREEN}What you see before you now...${NOCOLOR}"
+            echo -e "\n${LIGHTGREEN}Use of these commands are as follows:${YELLOW} service mcservers server status 1${NOCOLOR}"
+          };;
+esac
+echo -e "${NOCOLOR}"    #Cut back on last blank lines and color bleeds before user input after script finishes.
+exit 0
