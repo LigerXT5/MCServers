@@ -838,13 +838,17 @@ case "$1" in
     };;
     screen){ 
         if [[ "$2" =~ ^[0-9]+$ ]] ; then
-            if is_running "$2" ; then
-                echo -e "\n${YELLOW}CAUTION! ${LIGHTGREEN}To Exit Screen: Hold ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}A${LIGHTGREEN}, let go and hit ${YELLOW}D${LIGHTGREEN}.${NOCOLOR}"
-                read -s -n1 exist
-                command "screen -x ${SERVER_NAME[$2]}"
-                echo " "
+            if server_exist "$2" ; then
+                if is_running "$2" ; then
+                    echo -e "\n${YELLOW}CAUTION! ${LIGHTGREEN}To Exit Screen: Hold ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}A${LIGHTGREEN}, let go and hit ${YELLOW}D${LIGHTGREEN}.${NOCOLOR}"
+                    read -s -n1 exist
+                    command "screen -x ${SERVER_NAME[$2]}"
+                    echo " "
+                else
+                    echo -e "\n${LIGHTGREEN}Server ${GREEN}$2 ${SERVER_NAME[$2]}${LIGHTGREEN}: ${RED}Offline.${NOCOLOR}"
+                fi
             else
-                echo -e "\n${LIGHTGREEN}Server ${GREEN}$2 ${SERVER_NAME[$2]}${LIGHTGREEN}: ${RED}Offline.${NOCOLOR}"
+                exit
             fi
         else
             not_a_number
@@ -869,30 +873,34 @@ case "$1" in
         else
             {
             if [[ "$2" =~ ^[0-9]+$ ]] ; then
-                if is_running "$2" ; then
-                    echo -e "\n${YELLOW}CAUTION! ${LIGHTGREEN}Not Advised to manually backup a server while it's running!${NOCOLOR}"
+                if server_exist "$2" ; then
+                    if is_running "$2" ; then
+                        echo -e "\n${YELLOW}CAUTION! ${LIGHTGREEN}Not Advised to manually backup a server while it's running!${NOCOLOR}"
+                    else
+                        echo -e "\n${LIGHTGREEN}Server ${GREEN}$2 ${SERVER_NAME[$2]}${LIGHTGREEN}: ${RED}Offline.${NOCOLOR}"
+                    fi
+                    echo -e "\n${LIGHTGREEN}Checking directory size of ${SERVER_NAME[$2]}... ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}C ${LIGHTGREEN}To Cancel.${NOCOLOR}"
+                    command "du -hs ${SERVER_SETTINGS}/${SERVER_PATH[$2]}"
+                    echo -e "\n${LIGHTGREEN}The size of ${GREEN}${SERVER_SETTINGS}/ManualBackups${LIGHTGREEN} is...${NOCOLOR}"
+                    command "du -hs ${SERVER_SETTINGS}/ManualBackups"
+                    echo -e -n "\n${LIGHTGREEN}Do you wish to backup the WHOLE directory/server?${NOCOLOR} "
+                    yes_or_no yn
+                    echo " "
+                    case "$yn" in
+                        Y){
+                            echo -e "${LIGHTGREEN}Backing up ${GREEN}${SERVER_NAME[$2]}${LIGHTGREEN}. . .${NOCOLOR}"
+                            env GZIP=-9 tar czf "${SERVER_SETTINGS}/ManualBackups/${SERVER_PATH[$2]}-$(date +%d-%m-%Y--%H-%M).tar.gz" "${SERVER_SETTINGS}/${SERVER_PATH[$2]}"
+                            echo -e "${LIGHTGREEN}DONE!${NOCOLOR}"
+                            echo -e "\n${LIGHTGREEN}The size of ${GREEN}${SERVER_SETTINGS}/ManualBackups${LIGHTGREEN} is...${NOCOLOR}"
+                            command "du -hs ${SERVER_SETTINGS}/ManualBackups"
+                            };;
+                        N){
+                            echo -e "${LIGHTGREEN}Backup Cancelled for ${GREEN}${SERVER_NAME[$2]}${LIGHTGREEN}.${NOCOLOR}"
+                            };;
+                    esac
                 else
-                    echo -e "\n${LIGHTGREEN}Server ${GREEN}$2 ${SERVER_NAME[$2]}${LIGHTGREEN}: ${RED}Offline.${NOCOLOR}"
+                    exit
                 fi
-                echo -e "\n${LIGHTGREEN}Checking directory size of ${SERVER_NAME[$2]}... ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}C ${LIGHTGREEN}To Cancel.${NOCOLOR}"
-                command "du -hs ${SERVER_SETTINGS}/${SERVER_PATH[$2]}"
-                echo -e "\n${LIGHTGREEN}The size of ${GREEN}${SERVER_SETTINGS}/ManualBackups${LIGHTGREEN} is...${NOCOLOR}"
-                command "du -hs ${SERVER_SETTINGS}/ManualBackups"
-                echo -e -n "\n${LIGHTGREEN}Do you wish to backup the WHOLE directory/server?${NOCOLOR} "
-                yes_or_no yn
-                echo " "
-                case "$yn" in
-                    Y){
-                        echo -e "${LIGHTGREEN}Backing up ${GREEN}${SERVER_NAME[$2]}${LIGHTGREEN}. . .${NOCOLOR}"
-                        env GZIP=-9 tar czf "${SERVER_SETTINGS}/ManualBackups/${SERVER_PATH[$2]}-$(date +%d-%m-%Y--%H-%M).tar.gz" "${SERVER_SETTINGS}/${SERVER_PATH[$2]}"
-                        echo -e "${LIGHTGREEN}DONE!${NOCOLOR}"
-                        echo -e "\n${LIGHTGREEN}The size of ${GREEN}${SERVER_SETTINGS}/ManualBackups${LIGHTGREEN} is...${NOCOLOR}"
-                        command "du -hs ${SERVER_SETTINGS}/ManualBackups"
-                        };;
-                    N){
-                        echo -e "${LIGHTGREEN}Backup Cancelled for ${GREEN}${SERVER_NAME[$2]}${LIGHTGREEN}.${NOCOLOR}"
-                        };;
-                esac
             else
                 not_a_number
             fi
@@ -948,10 +956,14 @@ case "$1" in
             };;
             server.properties|bukkit.yml|spigot.yml|config.yml|eula.txt|help.yml|commands.yml){ 
                 if [[ "$3" =~ ^[0-9]+$ ]] ; then
-                    if [ -f "$SERVER_SETTINGS/${SERVER_PATH[$3]}/$2" ] ; then
-                        command "nano $SERVER_SETTINGS/${SERVER_PATH[$3]}/$2"
+                    if server_exist "$3" ; then
+                        if [ -f "$SERVER_SETTINGS/${SERVER_PATH[$3]}/$2" ] ; then
+                            command "nano $SERVER_SETTINGS/${SERVER_PATH[$3]}/$2"
+                        else
+                            echo -e "${LIGHTGREEN}$SERVER_SETTINGS/${SERVER_PATH[$3]}/$2 ${YELLOW}Doen't Exist!${NOCOLOR}"
+                        fi
                     else
-                        echo -e "${LIGHTGREEN}$SERVER_SETTINGS/${SERVER_PATH[$3]}/$2 ${YELLOW}Doen't Exist!${NOCOLOR}"
+                        exit
                     fi
                 else
                     not_a_number
@@ -959,11 +971,15 @@ case "$1" in
             };;
             log){ 
                 if [[ "$3" =~ ^[0-9]+$ ]] ; then
-                    echo -e "         \n${LIGHTGREEN}This Only Shows The LATEST.log file.${NOCOLOR}"
-                    echo -e "         ${LIGHTGREEN}Previous logs need to be extracted from their respective archives.${NOCOLOR}"
-                    echo -e -n "         ${LIGHTGREEN}Press any key to continue...${NOCOLOR}"
-                    read -s -n1 exist
-                    command "nano $SERVER_SETTINGS/${SERVER_PATH[$3]}/logs/latest.log"
+                    if server_exist "$3" ; then
+                        echo -e "         \n${LIGHTGREEN}This Only Shows The LATEST.log file.${NOCOLOR}"
+                        echo -e "         ${LIGHTGREEN}Previous logs need to be extracted from their respective archives.${NOCOLOR}"
+                        echo -e -n "         ${LIGHTGREEN}Press any key to continue...${NOCOLOR}"
+                        read -s -n1 exist
+                        command "nano $SERVER_SETTINGS/${SERVER_PATH[$3]}/logs/latest.log"
+                    else
+                        exit
+                    fi
                 else
                     not_a_number
                 fi
@@ -1002,22 +1018,26 @@ case "$1" in
                 esac
                 if [ -f "$SERVER_SETTINGS/${templatefile}" ] ; then
                     if [[ "$3" =~ ^[0-9]+$ ]] ; then
-                        if [ -d "$SERVER_SETTINGS/${SERVER_PATH[$3]}" ] ; then
-                            echo -e "\n${LIGHTGREEN}Are you sure you want to copy $2\'s template to ${SERVER_PATH[$3]}?${NOCOLOR}"
-                            yes_or_no yn
-                            case "$yn" in
-                                Y){
-                                    cd "${SERVER_SETTINGS}" ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
-                                    cp "${templatefile}" "${SERVER_PATH[$3]}/$2"
-                                    echo -e "\n${LIGHTGREEN}$2${LIGHTGREEN} in ${GREEN}${SERVER_PATH[$3]}${LIGHTGREEN} has been overwritten by ${GREEN}${templatefile}${LIGHTGREEN}.${NOCOLOR}"
-                                };;
-                                N){
-                                    echo -e "\n${GREEN}$2${LIGHTGREEN} in ${GREEN}${SERVER_PATH[$3]}${LIGHTGREEN} has not been overwritten.${NOCOLOR}"
-                                };;
-                            esac
+                        if server_exist "$3" ; then
+                            if [ -d "$SERVER_SETTINGS/${SERVER_PATH[$3]}" ] ; then
+                                echo -e "\n${LIGHTGREEN}Are you sure you want to copy $2\'s template to ${SERVER_PATH[$3]}?${NOCOLOR}"
+                                yes_or_no yn
+                                case "$yn" in
+                                    Y){
+                                        cd "${SERVER_SETTINGS}" ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+                                        cp "${templatefile}" "${SERVER_PATH[$3]}/$2"
+                                        echo -e "\n${LIGHTGREEN}$2${LIGHTGREEN} in ${GREEN}${SERVER_PATH[$3]}${LIGHTGREEN} has been overwritten by ${GREEN}${templatefile}${LIGHTGREEN}.${NOCOLOR}"
+                                    };;
+                                    N){
+                                        echo -e "\n${GREEN}$2${LIGHTGREEN} in ${GREEN}${SERVER_PATH[$3]}${LIGHTGREEN} has not been overwritten.${NOCOLOR}"
+                                    };;
+                                esac
+                            else
+                                echo -e "\n${GREEN}$SERVER_SETTINGS/${SERVER_PATH[$3]} ${YELLOW}Doen't Exist!${NOCOLOR}"
+                                echo -e "${LIGHTGREEN}Please start/create ${GREEN}${SERVER_NAME[$3]} ${LIGHTGREEN}first.${NOCOLOR}"
+                            fi
                         else
-                            echo -e "\n${GREEN}$SERVER_SETTINGS/${SERVER_PATH[$3]} ${YELLOW}Doen't Exist!${NOCOLOR}"
-                            echo -e "${LIGHTGREEN}Please start/create ${GREEN}${SERVER_NAME[$3]} ${LIGHTGREEN}first.${NOCOLOR}"
+                            exit
                         fi
                     else
                         not_a_number
