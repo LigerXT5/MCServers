@@ -1088,7 +1088,7 @@ case "$1" in
                     done
                     echo " "
                     show_screens
-                else
+                else {
                     if [[ "$3" =~ ^[0-9]+$ ]] ; then
                         stop_servers "$3"
                         echo " "
@@ -1096,6 +1096,7 @@ case "$1" in
                     else
                         not_a_number
                     fi
+                }
                 fi
             };;
             restart){
@@ -1107,7 +1108,7 @@ case "$1" in
                     done
                     echo " "
                     show_screens
-                else
+                else {
                     if [[ "$3" =~ ^[0-9]+$ ]] ; then
                         restart_servers "$3"
                         echo " "
@@ -1115,6 +1116,7 @@ case "$1" in
                     else
                         not_a_number
                     fi
+                    }
                 fi
             };;
             status){
