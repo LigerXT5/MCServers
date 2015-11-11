@@ -19,7 +19,8 @@
 #
 # Script Configuration Setting
 User=root
-SERVER_SETTINGS="/home/minecraft/MCServers"
+USER_DIRECTORY="/home/minecraft"
+MINECRAFT_DIRECTORY="MCServers"
 RED='\e[0;31m'          # Red
 GREEN='\e[0;32m'        # Green
 LIGHTGREEN='\e[0;92m'   # Light Green
@@ -29,7 +30,8 @@ exist="false"
 #
 #
 # Load Settings
-if [ -f $SERVER_SETTINGS/servers.cfg ] ; then
+SERVER_SETTINGS="$USER_DIRECTORY/$MINECRAFT_DIRECTORY"
+if [ -f "$SERVER_SETTINGS/servers.cfg" ] ; then
     . "$SERVER_SETTINGS/servers.cfg"
 else
     create_serverscfg
@@ -176,7 +178,7 @@ update_spigot(){
     if [ "${BUILDTOOLS_URL}" == "none"  ] ; then
         echo -e "\n${YELLOW}Skipping... BUILDTOOLS_URL=\"none\"\n${NOCOLOR}"
     else
-        cd $SERVER_SETTINGS/buildtools || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS}/buildtools from " pwd "!${NOCOLOR}\n" && exit; }
+        cd "$SERVER_SETTINGS/buildtools" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS}/buildtools from " pwd "!${NOCOLOR}\n" && exit; }
         if [ "$1" == "clean" ] ; then
             echo -e -n "\n${LIGHTGREEN}Cleaning Up in: ${NOCOLOR}"
             pwd;
@@ -199,7 +201,7 @@ update_spigot(){
         echo -e "\n${LIGHTGREEN}Downloading ${GREEN}BuildTools.jar${LIGHTGREEN}...${NOCOLOR}"
         curl "${BUILDTOOLS_URL}" -o "BuildTools.jar"
         echo -e "\n${LIGHTGREEN}Running ${GREEN}Buildtools.jar${NOCOLOR}\n"
-        HOME=/home/minecraft java -jar "BuildTools.jar"
+        HOME=/home/minecraft java -jar "BuildTools.jar"	      #Need to create a variable to state where to set git... whoops...
         echo -e "\n${LIGHTGREEN}Copying${GREEN} ${BUILDTOOLS_SPIGOT} ${LIGHTGREEN}to${GREEN} $SERVER_SETTINGS ${LIGHTGREEN}as${GREEN} ${BUILDTOOLS_OUTPUT}${LIGHTGREEN}.${NOCOLOR}"
         if [ -f "${BUILDTOOLS_SPIGOT}" ] ; then
             { command "cp $SERVER_SETTINGS/buildtools/${BUILDTOOLS_SPIGOT} ../${BUILDTOOLS_OUTPUT}"
@@ -220,7 +222,7 @@ update_minecraft(){
         exit
     else
         echo -e -n "${LIGHTGREEN}Deleting Old ${GREEN}${MINECRAFT_SERVER}${LIGHTGREEN}...${NOCOLOR}"
-        cd $SERVER_SETTINGS || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+        cd "$SERVER_SETTINGS" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
         pwd;
         if [ -f "${MINECRAFT_SERVER}" ] ; then
             { rm "${MINECRAFT_SERVER}"
@@ -229,8 +231,6 @@ update_minecraft(){
         else { echo -e "${LIGHTGREEN} None Detected.${NOCOLOR}"
             }
         fi
-        #While doing tests, then using CTRL+C a few times, I've noticed that BuiltTools.jar was not being deleted
-        #Come to find out, BuildTools.jar had a ?. Manual deletion just in case...
         if [ -f "${MINECRAFT_SERVER}?" ] ; then
             command "rm ${MINECRAFT_SERVER}?"
             echo " "
@@ -261,7 +261,7 @@ update_snapshot(){
         echo -e "\n${YELLOW}Skipping... MINECECRAFT_SNAPSHOT_URL=\"none\"\n${NOCOLOR}"
     else
         echo -e -n "${LIGHTGREEN}Deleting Old ${GREEN}${MINECRAFT_SNAPSHOT}${LIGHTGREEN}... ${NOCOLOR}"
-        cd $SERVER_SETTINGS || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+        cd "$SERVER_SETTINGS" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
         pwd;
         if [ -f "${MINECRAFT_SNAPSHOT}" ] ; then
             { rm "${MINECRAFT_SNAPSHOT}"
@@ -300,7 +300,7 @@ update_bungee(){
         echo -e "\n${YELLOW}Skipping... BUNGEECORD_URL=\"none\"\n${NOCOLOR}"
     else
         echo -e -n "${LIGHTGREEN}Deleting Old ${GREEN}${BUNGEECORD}... ${NOCOLOR}"
-        cd $SERVER_SETTINGS || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+        cd "$SERVER_SETTINGS" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
         pwd;
             if [ -f "${BUNGEECORD}" ] ; then
             { rm "${BUNGEECORD}"
@@ -367,7 +367,7 @@ not_a_number(){
 create_serverscfg(){
     echo -e "\n${RED}ERROR! ${GREEN}${SERVER_SETTINGS}/servers.cfg ${RED}Not Found!${NOCOLOR}"
     echo -e "${YELLOW}Creating Default Template..."
-    cd $SERVER_SETTINGS ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+    cd "$SERVER_SETTINGS" ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
     {
         echo '# Server Settings servers.cfg'
         echo ' '
@@ -391,7 +391,7 @@ create_serverscfg(){
         echo 'SERVER_PATH[$SURVIVAL]="Survival"                                                                                   #Server root directory where the server_core.jar will be saved and executed? Directory must be in same location as this config.'
         echo 'SERVER_CORE[$SURVIVAL]="Spigot.jar"                                                                                 #Server Core .jar name to run off of. Good use if using custom .jar files.'
         echo 'SERVER_EXTRAS[$SURVIVAL]="none"                                                                                     #If none to place, place: "none". Ex: "rm /plugins/plugin/data.txt && command two;"'
-        echo 'START_ARGS[$SURVIVAL]="java -server -Xmx1024M -XX:MaxPermSize=128M -XX:+UseConcMarkSweepGC -jar"                    #Server starting arguments. Best only to change the -Xmx for memory use and server.jar at the end.'
+        echo 'START_ARGS[$SURVIVAL]="java -server -Xmx1024M -XX:+UseConcMarkSweepGC -jar"                    #Server starting arguments. Best only to change the -Xmx for memory use and server.jar at the end.' #Removed max perm size, no longer needed since MC 1.8
         echo 'SHUTDOWN_CMD[$SURVIVAL]="stop"                                                                                      #Command used to tell the server, nicely, to shut down via screen/console.'
         echo 'MSG_CMD[$SURVIVAL]="say"                                                                                            #Command used to announce the SHUTDOWN_MSG1 and 2 prior to shutdown. Used for announced countdown.'
         echo 'SHUTDOWN_SECONDS[$SURVIVAL]=20                                                                                      #Number of seconds until MSG_CMD is used to shut down. Each second repeates the shutdown_msgs as the countdown decreases.'
@@ -412,13 +412,13 @@ create_serverscfg(){
         echo 'SHUTDOWN_MSG1[$BUNGEE]="Shutting down in "'
         echo 'SHUTDOWN_MSG2[$BUNGEE]=" Seconds."'
     } >> servers.cfg
-    
+
     sleep 1
     echo -e "${LIGHTGREEN}Config ${GREEN}servers.cfg${LIGHTGREEN} created in ${GREEN}$SERVFER_SETTIGNS${LIGHTGREEN}.${NOCOLOR}"
 }
 commandsyml_template(){
     echo -e "\n${YELLOW}Creating commands.yml Template in ${SERVER_SETTINGS}/commandsTEMPLATE.yml${NOCOLOR}"
-    if [ -f $SERVER_SETTINGS/"commandsTEMPLATE.yml" ] ; then
+    if [ -f "$SERVER_SETTINGS/commandsTEMPLATE.yml" ] ; then
         echo -e "${YELLOW}CAUTION!${GREEN} commandsTEMPLATE.yml${LIGHTGREEN} Already Exists!${NOCOLOR}"
         echo -e "${LIGHTGREEN}Do you wish to overwrite it?"
         rm "${SERVER_SETTINGS}/commandsTEMPLATE.yml"
@@ -427,7 +427,7 @@ commandsyml_template(){
         yn="Y"
     fi
     case "$yn" in
-        Y)  { cd $SERVER_SETTINGS ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+        Y)  { cd "$SERVER_SETTINGS" ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
                 {
                     echo '# This is the commands configuration file for Bukkit.'
                     echo '# For documentation on how to make use of this file, check out the Bukkit Wiki at'
@@ -495,7 +495,7 @@ commandsyml_template(){
 }
 spigotyml_template(){
     echo -e "\n${YELLOW}Creating spigot.yml Template in ${SERVER_SETTINGS}/spigotTEMPLATE.yml${NOCOLOR}"
-    if [ -f $SERVER_SETTINGS/"spigotTEMPLATE.yml" ] ; then
+    if [ -f "$SERVER_SETTINGS/spigotTEMPLATE.yml" ] ; then
         echo -e "${YELLOW}CAUTION!${GREEN} spigotTEMPLATE.yml${LIGHTGREEN} Already Exists!${NOCOLOR}"
         echo -e "${LIGHTGREEN}Do you wish to overwrite it?"
         rm "${SERVER_SETTINGS}/spigotTEMPLATE.yml"
@@ -504,7 +504,7 @@ spigotyml_template(){
         yn="Y"
     fi
     case "$yn" in
-        Y)  { cd $SERVER_SETTINGS || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+        Y)  { cd "$SERVER_SETTINGS" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
                 {
                     echo '# This is the main configuration file for Spigot.'
                     echo '# As you can see, theres tons to configure. Some options may impact gameplay, so use'
@@ -676,7 +676,7 @@ spigotyml_template(){
 #}
 bukkityml_template(){
     echo -e "\n${YELLOW}Creating bukkit.yml Template in ${SERVER_SETTINGS}/bukkitTEMPLATE.yml${NOCOLOR}"
-    if [ -f $SERVER_SETTINGS/"bukkitTEMPLATE.yml" ] ; then
+    if [ -f "$SERVER_SETTINGS/bukkitTEMPLATE.yml" ] ; then
         echo -e "${YELLOW}CAUTION!${GREEN} bukkitTEMPLATE.yml${LIGHTGREEN} Already Exists!${NOCOLOR}"
         echo -e "${LIGHTGREEN}Do you wish to overwrite it?"
         rm "${SERVER_SETTINGS}/bukkitTEMPLATE.yml"
@@ -685,7 +685,7 @@ bukkityml_template(){
         yn="Y"
     fi
     case "$yn" in
-        Y)  { cd $SERVER_SETTINGS ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+        Y)  { cd "$SERVER_SETTINGS" ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
                 {
                     echo '# This is the main configuration file for Bukkit.'
                     echo '# As you can see, theres actually not that much to configure without any plugins.'
@@ -744,7 +744,7 @@ bukkityml_template(){
 }
 serverproperties_template(){
     echo -e "\n${YELLOW}Creating server.properties Template in ${SERVER_SETTINGS}/serverTEMPLATE.properties${NOCOLOR}"
-    if [ -f $SERVER_SETTINGS/"serverTEMPLATE.properties" ] ; then
+    if [ -f "$SERVER_SETTINGS/serverTEMPLATE.properties" ] ; then
         echo -e "${YELLOW}CAUTION!${GREEN} serverTEMPLATE.properties${LIGHTGREEN} Already Exists!${NOCOLOR}"
         echo -e "${LIGHTGREEN}Do you wish to overwrite it?"
         rm "${SERVER_SETTINGS}/serverTEMPLATE.properties"
@@ -753,7 +753,7 @@ serverproperties_template(){
         yn="Y"
     fi
     case "$yn" in
-        Y)  { cd $SERVER_SETTINGS ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+        Y)  { cd "$SERVER_SETTINGS" ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
                 {
                     echo '#All variables listed are explained at: http://minecraft.gamepedia.com/Server.properties'
                     echo '#Minecraft server properties'
@@ -843,7 +843,7 @@ case "$1" in
                 echo -e "Clean out backups older than $3 days?${NOCOLOR}"
                 yes_or_no yn
                 case "$yn" in
-                    Y) { find ${SERVER_SETTINGS}/ManualBackups* -mtime +"$3" -exec rm {} \;
+                    Y) { find "${SERVER_SETTINGS}"/ManualBackups* -mtime +"$3" -exec rm {} \;
                         };;
                     N) { echo -e "\n${LIGHTGREEN}Backup Cleaning Discontinued.${NOCOLOR}"
                         };;
@@ -925,7 +925,7 @@ case "$1" in
                 fi
               };;
             servers.cfg){
-                if [ -f $SERVER_SETTINGS/"servers.cfg" ] ; then
+                if [ -f "$SERVER_SETTINGS/servers.cfg" ] ; then
                     command "nano ${SERVER_SETTINGS}/servers.cfg"
                 else
                     echo -e "${GREEN}${SERVER_SETTINGS}/servers.cfg ${YELLOW}Doen't Exist...?!${NOCOLOR}"
@@ -934,7 +934,7 @@ case "$1" in
             };;
             server.properties|bukkit.yml|spigot.yml|config.yml|eula.txt|help.yml|commands.yml){ 
                 if [[ "$3" =~ ^[0-9]+$ ]] ; then
-                    if [ -f $SERVER_SETTINGS/"${SERVER_PATH[$3]}/$2" ] ; then
+                    if [ -f "$SERVER_SETTINGS/${SERVER_PATH[$3]}/$2" ] ; then
                         command "nano $SERVER_SETTINGS/${SERVER_PATH[$3]}/$2"
                     else
                         echo -e "${LIGHTGREEN}$SERVER_SETTINGS/${SERVER_PATH[$3]}/$2 ${YELLOW}Doen't Exist!${NOCOLOR}"
@@ -955,7 +955,7 @@ case "$1" in
                 fi
             };;
             serverTEMPLATE.properties|bukkitTEMPLATE.yml|spigotTEMPLATE.yml|commandsTEMPLATE.yml){ 
-                if [ -f $SERVER_SETTINGS/"$2" ] ; then
+                if [ -f "$SERVER_SETTINGS/$2" ] ; then
                     command "nano $SERVER_SETTINGS/$2"
                 else
                     echo -e "${LIGHTGREEN}$SERVER_SETTINGS/$2 ${YELLOW}Doen't Exist!${NOCOLOR}"
@@ -973,21 +973,22 @@ case "$1" in
     overwrite|import){
         case "$2" in
             server.properties|bukkit.yml|spigot.yml|commands.yml){
-                templatefile=""
-                if [ "$2" == "server.properties" ] ; then
-                    templatefile="serverTEMPLATE.properties"
-                elif [ "$2" == "bukkit.yml" ] ; then
-                    templatefile="bukkitTEMPLATE.yml"
-                #elif [ "$2" == "help.yml" ] ; then
-                #    templatefile="helpTEMPLATE.yml"
-                elif [ "$2" == "spigot.yml" ] ; then
-                    templatefile="spigotTEMPLATE.yml"
-                elif [ "$2" == "commands.yml" ] ; then
-                    templatefile="commandsTEMPLATE.yml"
-                fi
-                if [ -f $SERVER_SETTINGS/"${templatefile}" ] ; then
+                templatefile="nofile.xyz"
+                case "$2" in
+                    server.properties){ templatefile="serverTEMPLATE.properties"
+                    };;
+                    bukkit.yml){ templatefile="bukkitTEMPLATE.yml"
+                    };;
+                    #help.yml){ templatefile="helpTEMPLATE.yml"
+                    #};;
+                    spigot.yml){ templatefile="spigotTEMPLATE.yml"
+                    };;
+                    commands.yml){ templatefile="commandsTEMPLATE.yml"
+                    };;
+                esac
+                if [ -f "$SERVER_SETTINGS/${templatefile}" ] ; then
                     if [[ "$3" =~ ^[0-9]+$ ]] ; then
-                        if [ -d $SERVER_SETTINGS/"${SERVER_PATH[$3]}" ] ; then
+                        if [ -d "$SERVER_SETTINGS/${SERVER_PATH[$3]}" ] ; then
                             echo -e "\n${LIGHTGREEN}Are you sure you want to copy $2\'s template to ${SERVER_PATH[$3]}?${NOCOLOR}"
                             yes_or_no yn
                             case "$yn" in
