@@ -1061,13 +1061,14 @@ case "$1" in
             "start"){
                 echo " "
                 if [ "$3" == "all" ] ; then 
-                    for (( i = 0; i < $SERVERS; i++ )) ; do
+                    { for (( i = 0; i < $SERVERS; i++ )) ; do
                         start_servers $i "$4"
                         sleep 2
                     done
                     echo " "
                     show_screens
-                else
+                    }
+                else {
                     if [[ "$3" =~ ^[0-9]+$ ]] ; then
                         start_servers "$3"
                         echo " "
@@ -1075,6 +1076,7 @@ case "$1" in
                     else
                         not_a_number
                     fi
+                }
                 fi
              };;
             "stop"){
