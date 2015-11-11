@@ -1060,7 +1060,7 @@ case "$1" in
         case "$2" in
             "start"){
                 echo " "
-                if [ "$3" == "all" ] ; then {
+                if [ "$3" == "all" ] ; then 
                     for (( i = 0; i < $SERVERS; i++ )) ; do
                         start_servers $i "$4"
                         sleep 2
@@ -1079,7 +1079,7 @@ case "$1" in
              };;
             "stop"){
                 echo " "
-                if [ "$3" == "all" ] ; then {
+                if [ "$3" == "all" ] ; then 
                     for (( i = 0; i < $SERVERS; i++ )) ; do
                         stop_servers $i
                         sleep 5
@@ -1098,7 +1098,7 @@ case "$1" in
             };;
             restart){
                 echo " "
-                if [ "$3" == "all" ] ; then {
+                if [ "$3" == "all" ] ; then 
                     for (( i = 0; i < $SERVERS; i++ )) ; do
                         restart_servers $i "$4"
                         sleep 5
