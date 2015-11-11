@@ -1060,69 +1060,59 @@ case "$1" in
         case "$2" in
             "start"){
                 echo " "
-                if [[ "$3" =~ ^[0-9]+$ ]] ; then
-                    if [ "$3" ] ; then
-                        if [ "$3" == "all" ] ; then {
-                            for (( i = 0; i < $SERVERS; i++ )) ; do
-                                start_servers $i "$4"
-                                sleep 2
-                            done
-                            echo " "
-                            show_screens
-                        }
-                        else { start_servers "$3"
-                                echo " "
-                                show_screens
-                        }
-                        fi
-                    fi
+                if [ "$3" == "all" ] ; then {
+                    for (( i = 0; i < $SERVERS; i++ )) ; do
+                        start_servers $i "$4"
+                        sleep 2
+                    done
+                    echo " "
+                    show_screens
                 else
-                    not_a_number
+                    if [[ "$3" =~ ^[0-9]+$ ]] ; then
+                        start_servers "$3"
+                        echo " "
+                        show_screens
+                    else
+                        not_a_number
+                    fi
                 fi
              };;
             "stop"){
                 echo " "
-                if [[ "$3" =~ ^[0-9]+$ ]] ; then
-                    if [ "$3" ] ; then
-                        if [ "$3" == "all" ] ; then {
-                            for (( i = 0; i < $SERVERS; i++ )) ; do
-                                stop_servers $i
-                                sleep 5
-                            done
-                            echo " "
-                            show_screens
-                        }
-                        else { 
-                            stop_servers "$3"
-                            echo " "
-                            show_screens
-                        }
-                        fi
-                    fi
+                if [ "$3" == "all" ] ; then {
+                    for (( i = 0; i < $SERVERS; i++ )) ; do
+                        stop_servers $i
+                        sleep 5
+                    done
+                    echo " "
+                    show_screens
                 else
-                    not_a_number
+                    if [[ "$3" =~ ^[0-9]+$ ]] ; then
+                        stop_servers "$3"
+                        echo " "
+                        show_screens
+                    else
+                        not_a_number
+                    fi
                 fi
             };;
             restart){
                 echo " "
-                if [[ "$3" =~ ^[0-9]+$ ]] ; then
-                    if [ "$3" ] ; then
-                        if [ "$3" == "all" ] ; then {
-                            for (( i = 0; i < $SERVERS; i++ )) ; do
-                                restart_servers $i "$4"
-                                sleep 5
-                            done
-                            echo " "
-                            show_screens
-                        }
-                        else { restart_servers "$3"
-                            echo " "
-                            show_screens
-                        }
-                        fi
-                    fi
+                if [ "$3" == "all" ] ; then {
+                    for (( i = 0; i < $SERVERS; i++ )) ; do
+                        restart_servers $i "$4"
+                        sleep 5
+                    done
+                    echo " "
+                    show_screens
                 else
-                    not_a_number
+                    if [[ "$3" =~ ^[0-9]+$ ]] ; then
+                        restart_servers "$3"
+                        echo " "
+                        show_screens
+                    else
+                        not_a_number
+                    fi
                 fi
             };;
             status){
