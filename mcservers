@@ -68,110 +68,116 @@ get_running() {
     fi
 }
 start_servers() {
-    exist="false"
-    echo -e "${LIGHTGREEN}Server ID:${GREEN}$1 ${SERVER_NAME[$1]}${LIGHTGREEN}...${NOCOLOR} "
-    if is_running "$1" ; then
-        echo -e "   ${GREEN}Running!${NOCOLOR}" 
-    else
-        if [ "${SERVER_ENABLED[$1]}" == true ] ; then
-            while [ "$exist" == "false" ]; do
-                if [ -d "$SERVER_SETTINGS/${SERVER_PATH}" ] ; then
-                    if [ "${SERVER_EXTRAS[$1]}" != none ] ; then
-                                                #Run specific commands based on each server listed of the servers.cfg
-                        echo -e "${LIGHTGREEN}Running Extra_Commands For ${GREEN}${SERVER_NAME[$1]}${LIGHTGREEN}.${NOCOLOR}"
-                        command "cd $SERVER_SETTINGS/${SERVER_PATH[$1]} && ${SERVER_EXTRAS[$1]}"
-                    fi
-                                                #Either this is the Spigot.jar or Bungeecord as listed in the servers.cfg
-                    if [ -f "$SERVER_SETTINGS/${SERVER_CORE[$1]}" ] ; then
-                        { cp "$SERVER_SETTINGS/${SERVER_CORE[$1]}" "${SERVER_SETTINGS}/${SERVER_PATH[$1]}/${SERVER_CORE[$1]}"
-                        echo -e "   ${LIGHTGREEN}Copied ${GREEN}${SERVER_CORE[$1]}${LIGHTGREEN} from ${GREEN}${SERVER_SETTINGS}${LIGHTGREEN}!${NOCOLOR}"
-                        }
-                    else {
-                            echo -e "\n${RED}ERROR! ${LIGHTGREEN}${SERVER_CORE[$1]} ${RED}Not Found!${NOCOLOR}"
-                            echo -e "${LIGHTGREEN}   Has ${YELLOW}service mcservers update spigot/minecraft/snapshot/bungee/all${LIGHTGREEN} been ran?${NOCOLOR}"
-                            echo -e "${LIGHTGREEN}   If you have recently ran ${YELLOW}update${LIGHTGREEN}, did output a different ${GREEN}filename/version${LIGHTGREEN} or ${GREEN} failed?${NOCOLOR}"
-                            echo -e "${LIGHTGREEN}   Update your ${GREEN}servers.cfg${LIGHTGREEN} in ${GREEN}${SERVER_SETTINGS}${NOCOLOR}"
-                        }
-                    fi
-                    exist="true"
-                else
-                    {
-                        if [ "$2" != "skip" ] ; then
-                            echo -e "\n${RED}ERROR! ${YELLOW}${SERVER_PATH[$1]}${LIGHTGREEN} in ${YELLOW}${SERVER_SETTINGS}${LIGHTGREEN} Doesn't Exist!${NOCOLOR}"
-                            echo -e "${LIGHTGREEN}Should ${GREEN}${SERVER_PATH[$1]}${LIGHTGREEN} be created and started?${NOCOLOR}"
-                            yes_or_no yn
-                            case "$yn" in
-                                Y) {
-                                        echo -e "\n${LIGHTGREEN}Creating ${GREEN}${SERVER_PATH[$1]} ${LIGHTGREEN}in ${GREEN}${SERVER_SETTINGS}${LIGHTGREEN}...${NOCOLOR}"
-                                        cd "${SERVER_SETTINGS}" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
-                                        mkdir "${SERVER_PATH[$1]}"
-                                        echo -e "${LIGHTGREEN}Created.${NOCOLOR}"
-                                    };;
-                                N) {
-                                        echo -e "${GREEN}$SERVER_PATH[$1]${LIGHTGREEN} Not Created. ${GREEN}${SERVER_NAME[$1]}${LIGHTGREEN} cannot start without it."
-                                    };;
-                            esac
-                        fi
-                    }
-                fi
-            done
-            cd "$SERVER_SETTINGS/${SERVER_PATH[$1]}" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS}/${SERVER_PATH[$1]} from " pwd "!${NOCOLOR}\n" && exit; }
-            command "screen -dmS ${SERVER_NAME[$1]} ${START_ARGS[$1]} -Dserver=${SERVER_NAME[$1]} ${SERVER_CORE[$1]}"
-            echo -e "   ${GREEN}Starting!${NOCOLOR}"
+    if server_exist "$1" ; then
+        exist="false"
+        echo -e "${LIGHTGREEN}Server ID:${GREEN}$1 ${SERVER_NAME[$1]}${LIGHTGREEN}...${NOCOLOR} "
+        if is_running "$1" ; then
+            echo -e "   ${GREEN}Running!${NOCOLOR}" 
         else
-            echo -e "   ${YELLOW}DISABLED!${NOCOLOR}"
+            if [ "${SERVER_ENABLED[$1]}" == true ] ; then
+                while [ "$exist" == "false" ]; do
+                    if [ -d "$SERVER_SETTINGS/${SERVER_PATH}" ] ; then
+                        if [ "${SERVER_EXTRAS[$1]}" != none ] ; then
+                                                    #Run specific commands based on each server listed of the servers.cfg
+                            echo -e "${LIGHTGREEN}Running Extra_Commands For ${GREEN}${SERVER_NAME[$1]}${LIGHTGREEN}.${NOCOLOR}"
+                            command "cd $SERVER_SETTINGS/${SERVER_PATH[$1]} && ${SERVER_EXTRAS[$1]}"
+                        fi
+                                                    #Either this is the Spigot.jar or Bungeecord as listed in the servers.cfg
+                        if [ -f "$SERVER_SETTINGS/${SERVER_CORE[$1]}" ] ; then
+                            { cp "$SERVER_SETTINGS/${SERVER_CORE[$1]}" "${SERVER_SETTINGS}/${SERVER_PATH[$1]}/${SERVER_CORE[$1]}"
+                            echo -e "   ${LIGHTGREEN}Copied ${GREEN}${SERVER_CORE[$1]}${LIGHTGREEN} from ${GREEN}${SERVER_SETTINGS}${LIGHTGREEN}!${NOCOLOR}"
+                            }
+                        else {
+                                echo -e "\n${RED}ERROR! ${LIGHTGREEN}${SERVER_CORE[$1]} ${RED}Not Found!${NOCOLOR}"
+                                echo -e "${LIGHTGREEN}   Has ${YELLOW}service mcservers update spigot/minecraft/snapshot/bungee/all${LIGHTGREEN} been ran?${NOCOLOR}"
+                                echo -e "${LIGHTGREEN}   If you have recently ran ${YELLOW}update${LIGHTGREEN}, did output a different ${GREEN}filename/version${LIGHTGREEN} or ${GREEN} failed?${NOCOLOR}"
+                                echo -e "${LIGHTGREEN}   Update your ${GREEN}servers.cfg${LIGHTGREEN} in ${GREEN}${SERVER_SETTINGS}${NOCOLOR}"
+                            }
+                        fi
+                        exist="true"
+                    else
+                        {
+                            if [ "$2" != "skip" ] ; then
+                                echo -e "\n${RED}ERROR! ${YELLOW}${SERVER_PATH[$1]}${LIGHTGREEN} in ${YELLOW}${SERVER_SETTINGS}${LIGHTGREEN} Doesn't Exist!${NOCOLOR}"
+                                echo -e "${LIGHTGREEN}Should ${GREEN}${SERVER_PATH[$1]}${LIGHTGREEN} be created and started?${NOCOLOR}"
+                                yes_or_no yn
+                                case "$yn" in
+                                    Y) {
+                                            echo -e "\n${LIGHTGREEN}Creating ${GREEN}${SERVER_PATH[$1]} ${LIGHTGREEN}in ${GREEN}${SERVER_SETTINGS}${LIGHTGREEN}...${NOCOLOR}"
+                                            cd "${SERVER_SETTINGS}" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+                                            mkdir "${SERVER_PATH[$1]}"
+                                            echo -e "${LIGHTGREEN}Created.${NOCOLOR}"
+                                        };;
+                                    N) {
+                                            echo -e "${GREEN}$SERVER_PATH[$1]${LIGHTGREEN} Not Created. ${GREEN}${SERVER_NAME[$1]}${LIGHTGREEN} cannot start without it."
+                                        };;
+                                esac
+                            fi
+                        }
+                    fi
+                done
+                cd "$SERVER_SETTINGS/${SERVER_PATH[$1]}" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS}/${SERVER_PATH[$1]} from " pwd "!${NOCOLOR}\n" && exit; }
+                command "screen -dmS ${SERVER_NAME[$1]} ${START_ARGS[$1]} -Dserver=${SERVER_NAME[$1]} ${SERVER_CORE[$1]}"
+                echo -e "   ${GREEN}Starting!${NOCOLOR}"
+            else
+                echo -e "   ${YELLOW}DISABLED!${NOCOLOR}"
+            fi
         fi
+        exist="false"
     fi
-    exist="false"
 }
 stop_servers() {
-    echo -e -n "\n${LIGHTGREEN}To stop countdown/script entirely: ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}C${LIGHTGREEN}.${NOCOLOR}"
-    i="3"
-    while [ "$i" -gt 0 ]; do
-        echo -e -n "${LIGHTGREEN} .${NOCOLOR}"
-        sleep 1
-        : $((i--))
-    done
-    echo " "
-    if is_running "$1" ; then
-        echo -e -n "${RED}Stopping Server ${LIGHTGREEN}ID:${GREEN}$1 ${SERVER_NAME[$1]}${RED}...${NOCOLOR}"
-    else
-        echo -e "${LIGHTGREEN}Server ID:${GREEN}$1 ${SERVER_NAME[$1]}${LIGHTGREEN}: ${YELLOW}Already Offline?${NOCOLOR}"
-    fi
-    if is_running "$1" ; then
-        i="${SHUTDOWN_SECONDS[$1]}"
-        while [ "$i" -gt 0 ]; do
-            command "screen -rx ${SERVER_NAME[$1]} -X eval 'stuff \"${MSG_CMD[$1]} ${SHUTDOWN_MSG1[$1]}$i${SHUTDOWN_MSG2[$1]}\"\015'"
-            echo -e -n "${LIGHTGREEN} ${i}s...${NOCOLOR}"
-            sleep 1
-            : $((i--))
-        done
-        echo -e "\n${LIGHTGREEN}   Executing ${SHUTDOWN_CMD[$1]}."
-        command "screen -rx ${SERVER_NAME[$1]} -X eval 'stuff \"${SHUTDOWN_CMD[$1]}\"\015'"
-        sleep 3
-        echo -e -n "${LIGHTGREEN}   Waiting until server is offline.${NOCOLOR}"
-        i="10"
+    if server_exist "$1" ; then
+        echo -e -n "\n${LIGHTGREEN}To stop countdown/script entirely: ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}C${LIGHTGREEN}.${NOCOLOR}"
+        i="3"
         while [ "$i" -gt 0 ]; do
             echo -e -n "${LIGHTGREEN} .${NOCOLOR}"
             sleep 1
             : $((i--))
         done
-        echo -e " "
+        echo " "
         if is_running "$1" ; then
-            echo -e "${GREEN}${SERVER_NAME} ${LIGHTGREEN}has not finished shutting down after 10 seconds.${NOCOLOR}"
-            echo -e "${LIGHTGREEN}Please ${YELLOW}Wait${LIGHTGREEN} or ${YELLOW}Check${LIGHTGREEN} it's screen."
-            echo -e "${LIGHTGREEN}    Use: ${YELLOW}service mcservers screen $1${NOCOLOR}"
+            echo -e -n "${RED}Stopping Server ${LIGHTGREEN}ID:${GREEN}$1 ${SERVER_NAME[$1]}${RED}...${NOCOLOR}"
+        else
+            echo -e "${LIGHTGREEN}Server ID:${GREEN}$1 ${SERVER_NAME[$1]}${LIGHTGREEN}: ${YELLOW}Already Offline?${NOCOLOR}"
+        fi
+        if is_running "$1" ; then
+            i="${SHUTDOWN_SECONDS[$1]}"
+            while [ "$i" -gt 0 ]; do
+                command "screen -rx ${SERVER_NAME[$1]} -X eval 'stuff \"${MSG_CMD[$1]} ${SHUTDOWN_MSG1[$1]}$i${SHUTDOWN_MSG2[$1]}\"\015'"
+                echo -e -n "${LIGHTGREEN} ${i}s...${NOCOLOR}"
+                sleep 1
+                : $((i--))
+            done
+            echo -e "\n${LIGHTGREEN}   Executing ${SHUTDOWN_CMD[$1]}."
+            command "screen -rx ${SERVER_NAME[$1]} -X eval 'stuff \"${SHUTDOWN_CMD[$1]}\"\015'"
+            sleep 3
+            echo -e -n "${LIGHTGREEN}   Waiting until server is offline.${NOCOLOR}"
+            i="10"
+            while [ "$i" -gt 0 ]; do
+                echo -e -n "${LIGHTGREEN} .${NOCOLOR}"
+                sleep 1
+                : $((i--))
+            done
+            echo -e " "
+            if is_running "$1" ; then
+                echo -e "${GREEN}${SERVER_NAME} ${LIGHTGREEN}has not finished shutting down after 10 seconds.${NOCOLOR}"
+                echo -e "${LIGHTGREEN}Please ${YELLOW}Wait${LIGHTGREEN} or ${YELLOW}Check${LIGHTGREEN} it's screen."
+                echo -e "${LIGHTGREEN}    Use: ${YELLOW}service mcservers screen $1${NOCOLOR}"
+            fi
         fi
     fi
 }
 restart_servers() {
-    echo -e -n "${YELLOW}Restarting ${LIGHTGREEN}Server ID:${GREEN}$1 ${SERVER_NAME[$1]}... ${NOCOLOR}"
-    if is_running "$1" ; then
-        stop_servers "$1"
-        sleep 2
-        start_servers "$1"
-    else
-        start_servers "$1"
+    if server_exist "$1" ; then
+        echo -e -n "${YELLOW}Restarting ${LIGHTGREEN}Server ID:${GREEN}$1 ${SERVER_NAME[$1]}... ${NOCOLOR}"
+        if is_running "$1" ; then
+            stop_servers "$1"
+            sleep 2
+            start_servers "$1"
+        else
+            start_servers "$1"
+        fi
     fi
 }
 update_spigot(){
@@ -360,6 +366,14 @@ yes_or_no(){
         esac
     done
     echo " "
+}
+server_exist(){
+    if [ "$SERVER_NAME[$1]" = "" ] ; then
+        echo -e "\n${LIGHTGREEN}$1${YELLOW} Does Not Exist!"
+        return 1
+    else
+        return 0
+    fi
 }
 not_a_number(){
     echo -e "\n${LIGHTGREEN}Server ID ${RED}Must Be A Number!${NOCOLOR}"
