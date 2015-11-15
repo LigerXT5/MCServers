@@ -847,10 +847,15 @@ case "$1" in
         if [[ "$2" =~ ^[0-9]+$ ]] ; then
             if server_exist "$2" ; then
                 if is_running "$2" ; then
-                    echo -e "\n${YELLOW}CAUTION! ${LIGHTGREEN}To Exit Screen: Hold ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}A${LIGHTGREEN}, let go and hit ${YELLOW}D${LIGHTGREEN}.${NOCOLOR}"
-                    read -s -n1 exist
-                    command "screen -x ${SERVER_NAME[$2]}"
-                    echo " "
+                    if [ "$3" == "kill"  ] ; then
+                        command "screen -XS ${SERVER_NAME[$2]} kill"
+                        echo -e "${GREEN}${SERVER_NAME[$2]} ${LIGHTGREEN}Has Been ${YELLOW}Killed${NOCOLOR}"
+                    else
+                        echo -e "\n${YELLOW}CAUTION! ${LIGHTGREEN}To Exit Screen: Hold ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}A${LIGHTGREEN}, let go and hit ${YELLOW}D${LIGHTGREEN}.${NOCOLOR}"
+                        read -s -n1 exist
+                        command "screen -x ${SERVER_NAME[$2]}"
+                        echo " "
+                    fi
                 else
                     echo -e "\n${LIGHTGREEN}Server ${GREEN}$2 ${SERVER_NAME[$2]}${LIGHTGREEN}: ${RED}Offline.${NOCOLOR}"
                 fi
