@@ -212,7 +212,7 @@ update_spigot(){
         echo -e "\n${LIGHTGREEN}Downloading ${GREEN}BuildTools.jar${LIGHTGREEN}...${NOCOLOR}"
         curl "${BUILDTOOLS_URL}" -o "BuildTools.jar"
         echo -e "\n${LIGHTGREEN}Running ${GREEN}Buildtools.jar${NOCOLOR}\n"
-        HOME=/home/minecraft java -jar "BuildTools.jar"	      #Need to create a variable to state where to set git... whoops...
+        HOME=$USER_DIRECTORY java -jar "BuildTools.jar"
         echo -e "\n${LIGHTGREEN}Copying${GREEN} ${BUILDTOOLS_SPIGOT} ${LIGHTGREEN}to${GREEN} $SERVER_SETTINGS ${LIGHTGREEN}as${GREEN} ${BUILDTOOLS_OUTPUT}${LIGHTGREEN}.${NOCOLOR}"
         if [ -f "${BUILDTOOLS_SPIGOT}" ] ; then
             { command "cp $SERVER_SETTINGS/buildtools/${BUILDTOOLS_SPIGOT} ../${BUILDTOOLS_OUTPUT}"
