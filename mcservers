@@ -1145,8 +1145,8 @@ case "$1" in
                 fi
             };;
             *){ echo -e "\n${LIGHTGREEN}Choices: "
-                echo -e "${LIGHTGREEN}   |   ${YELLOW}Start${LIGHTGREEN}   |   ${YELLOW}Stop{LIGHTGREEN}   |${NOCOLOR}"
-                echo -e "${LIGHTGREEN}   |   ${YELLOW}Restart${LIGHTGREEN} |   ${YELLOW}Status{LIGHTGREEN} |${NOCOLOR}"
+                echo -e "${LIGHTGREEN}   |   ${YELLOW}Start${LIGHTGREEN}   |   ${YELLOW}Stop${LIGHTGREEN}   |${NOCOLOR}"
+                echo -e "${LIGHTGREEN}   |   ${YELLOW}Restart${LIGHTGREEN} |   ${YELLOW}Status${LIGHTGREEN} |${NOCOLOR}"
                 echo -e "   ${LIGHTGREEN}Followed by Server ${YELLOW}ID# ${LIGHTGREEN}.${NOCOLOR}"
                 echo -e "${LIGHTGREEN}Example: ${YELLOW}service mcservers server start 1 ${LIGHTGREEN}(or replace ${YELLOW}1 ${LIGHTGREEN}with ${YELLOW}All${LIGHTGREEN}.)${NOCOLOR}"
                 echo -e "${LIGHTGREEN}IDs in: ${YELLOW}service mcservers server status${NOCOLOR}"
