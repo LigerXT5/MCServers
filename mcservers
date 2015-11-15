@@ -21,13 +21,19 @@
 User=root
 USER_DIRECTORY="/home/minecraft"
 MINECRAFT_DIRECTORY="MCServers"
+#Screen color output. Change the color codes to your choices.
+#References https://wiki.archlinux.org/index.php/Color_Bash_Prompt#List_of_colors_for_prompt_and_Bash
+#Just change what appears between the ' and '.
+#Do NOT change the name before the =, it's used as references in the script.
+#If you wish to have no color, replace the codes for colors with the code for NOCOLOR: \033[0m
 RED='\e[0;31m'          # Red
 GREEN='\e[0;32m'        # Green
 LIGHTGREEN='\e[0;92m'   # Light Green
 YELLOW='\e[0;33m'       # Yellow
+###DO NOT CHANGE BELOW!
 NOCOLOR='\033[0m'       # Reset
 exist="false"
-#
+###
 #
 # Load Settings
 SERVER_SETTINGS="$USER_DIRECTORY/$MINECRAFT_DIRECTORY"
