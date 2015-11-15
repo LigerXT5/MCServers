@@ -50,9 +50,9 @@ command() {
 # Check if the screen is running.
 is_running() {
     if ps ax | grep java | grep "${SERVER_NAME[$1]}" > /dev/null ; then
-        return 0
+        return 0    #If the screen does NOT exist, returns false, or nothing.
     else
-        return 1
+        return 1    #If the screen does exist, return true.
     fi
 }
 # Checks if the server is running then send a message. # Bug Found, needs fixed. If status checking a server ID higher than current listed servers, shows ID (NoName) Active, even though it doesn't exist.
@@ -137,6 +137,7 @@ stop_servers() {
         done
         echo " "
         if is_running "$1" ; then
+            echo ""
             echo -e -n "${RED}Stopping Server ${LIGHTGREEN}ID:${GREEN}$1 ${SERVER_NAME[$1]}${RED}...${NOCOLOR}"
         else
             echo -e "${LIGHTGREEN}Server ID:${GREEN}$1 ${SERVER_NAME[$1]}${LIGHTGREEN}: ${YELLOW}Already Offline?${NOCOLOR}"
@@ -153,7 +154,7 @@ stop_servers() {
             command "screen -rx ${SERVER_NAME[$1]} -X eval 'stuff \"${SHUTDOWN_CMD[$1]}\"\015'"
             sleep 3
             echo -e -n "${LIGHTGREEN}   Waiting until server is offline.${NOCOLOR}"
-            i="10"
+            i="${SHUTDOWN_MAX_WAIT[$1]}"
             while [ "$i" -gt 0 ]; do
                 if is_running "$1" ; then
                     echo -e -n "${LIGHTGREEN} .${NOCOLOR}"
@@ -412,6 +413,7 @@ create_serverscfg(){
         echo 'START_ARGS[$SURVIVAL]="java -server -Xmx1024M -XX:+UseConcMarkSweepGC -jar"                    #Server starting arguments. Best only to change the -Xmx for memory use and server.jar at the end.' #Removed max perm size, no longer needed since MC 1.8
         echo 'SHUTDOWN_CMD[$SURVIVAL]="stop"                                                                                      #Command used to tell the server, nicely, to shut down via screen/console.'
         echo 'MSG_CMD[$SURVIVAL]="say"                                                                                            #Command used to announce the SHUTDOWN_MSG1 and 2 prior to shutdown. Used for announced countdown.'
+        echo 'SHUTDOWN_MAX_WAIT[$SURVIVAL]=30                                                                                     #How long to wait until server is shut down completely, before continueing on with the script. If server is down before the set number, the script exits.'
         echo 'SHUTDOWN_SECONDS[$SURVIVAL]=20                                                                                      #Number of seconds until MSG_CMD is used to shut down. Each second repeates the shutdown_msgs as the countdown decreases.'
         echo 'SHUTDOWN_MSG1[$SURVIVAL]="&KD&rShutting down in "                                                                   #First half of the shutdown message, followed by the number of seconds remaining.'
         echo 'SHUTDOWN_MSG2[$SURVIVAL]=" Seconds&KD&r."                                                                           #Second half of the shutdown message, after the number of seconds remaining.'
@@ -426,6 +428,7 @@ create_serverscfg(){
         echo 'START_ARGS[$BUNGEE]="java -server -Xmx200M -XX:+UseConcMarkSweepGC -jar -DIReallyKnowWhatIaAmDoingISwear"'
         echo 'SHUTDOWN_CMD[$BUNGEE]="end"'
         echo 'MSG_CMD[$BUNGEE]="alert"'
+        echo 'SHUTDOWN_MAX_WAIT[$BUNGEE]=30'
         echo 'SHUTDOWN_SECONDS[$BUNGEE]=5'
         echo 'SHUTDOWN_MSG1[$BUNGEE]="Shutting down in "'
         echo 'SHUTDOWN_MSG2[$BUNGEE]=" Seconds."'
