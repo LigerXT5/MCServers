@@ -66,7 +66,7 @@ get_running() {
     if is_running "$1" ; then
         echo -e "${LIGHTGREEN}Server ID:${GREEN}$1 ${SERVER_NAME[$1]}${LIGHTGREEN}: Active.${NOCOLOR}"
     else
-        if [ "${SERVER_ENABLED[$1]}" = true ] ; then
+        if [ "${SERVER_ENABLED[$1]}" = enable ] || [ "${SERVER_ENABLED[$1]}" = manual ] ; then
             echo -e "${LIGHTGREEN}Server ID:${GREEN}$1 ${SERVER_NAME[$1]}${LIGHTGREEN}: ${RED}Offline.${NOCOLOR}"
         else
             echo -e "${LIGHTGREEN}Server ID:${GREEN}$1 ${SERVER_NAME[$1]}${LIGHTGREEN}: ${YELLOW}Disabled.${NOCOLOR}"
@@ -80,54 +80,50 @@ start_servers() {
         if is_running "$1" ; then
             echo -e "   ${GREEN}Running!${NOCOLOR}" 
         else
-            if [ "${SERVER_ENABLED[$1]}" == true ] ; then
-                while [ "$exist" == "false" ]; do
-                    if [ -d "$SERVER_SETTINGS/${SERVER_PATH}" ] ; then
-                        if [ "${SERVER_EXTRAS[$1]}" != none ] ; then
-                                                    #Run specific commands based on each server listed of the servers.cfg
-                            echo -e "${LIGHTGREEN}Running Extra_Commands For ${GREEN}${SERVER_NAME[$1]}${LIGHTGREEN}.${NOCOLOR}"
-                            command "cd $SERVER_SETTINGS/${SERVER_PATH[$1]} && ${SERVER_EXTRAS[$1]}"
-                        fi
-                                                    #Either this is the Spigot.jar or Bungeecord as listed in the servers.cfg
-                        if [ -f "$SERVER_SETTINGS/${SERVER_CORE[$1]}" ] ; then
-                            { cp "$SERVER_SETTINGS/${SERVER_CORE[$1]}" "${SERVER_SETTINGS}/${SERVER_PATH[$1]}/${SERVER_CORE[$1]}"
-                            echo -e "   ${LIGHTGREEN}Copied ${GREEN}${SERVER_CORE[$1]}${LIGHTGREEN} from ${GREEN}${SERVER_SETTINGS}${LIGHTGREEN}!${NOCOLOR}"
-                            }
-                        else {
-                                echo -e "\n${RED}ERROR! ${LIGHTGREEN}${SERVER_CORE[$1]} ${RED}Not Found!${NOCOLOR}"
-                                echo -e "${LIGHTGREEN}   Has ${YELLOW}service mcservers update spigot/minecraft/snapshot/bungee/all${LIGHTGREEN} been ran?${NOCOLOR}"
-                                echo -e "${LIGHTGREEN}   If you have recently ran ${YELLOW}update${LIGHTGREEN}, did output a different ${GREEN}filename/version${LIGHTGREEN} or ${GREEN} failed?${NOCOLOR}"
-                                echo -e "${LIGHTGREEN}   Update your ${GREEN}servers.cfg${LIGHTGREEN} in ${GREEN}${SERVER_SETTINGS}${NOCOLOR}"
-                            }
-                        fi
-                        exist="true"
-                    else
-                        {
-                            if [ "$2" != "skip" ] ; then
-                                echo -e "\n${RED}ERROR! ${YELLOW}${SERVER_PATH[$1]}${LIGHTGREEN} in ${YELLOW}${SERVER_SETTINGS}${LIGHTGREEN} Doesn't Exist!${NOCOLOR}"
-                                echo -e "${LIGHTGREEN}Should ${GREEN}${SERVER_PATH[$1]}${LIGHTGREEN} be created and started?${NOCOLOR}"
-                                yes_or_no yn
-                                case "$yn" in
-                                    Y) {
-                                            echo -e "\n${LIGHTGREEN}Creating ${GREEN}${SERVER_PATH[$1]} ${LIGHTGREEN}in ${GREEN}${SERVER_SETTINGS}${LIGHTGREEN}...${NOCOLOR}"
-                                            cd "${SERVER_SETTINGS}" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
-                                            mkdir "${SERVER_PATH[$1]}"
-                                            echo -e "${LIGHTGREEN}Created.${NOCOLOR}"
-                                        };;
-                                    N) {
-                                            echo -e "${GREEN}$SERVER_PATH[$1]${LIGHTGREEN} Not Created. ${GREEN}${SERVER_NAME[$1]}${LIGHTGREEN} cannot start without it."
-                                        };;
-                                esac
-                            fi
+            while [ "$exist" == "false" ]; do
+                if [ -d "$SERVER_SETTINGS/${SERVER_PATH}" ] ; then
+                    if [ "${SERVER_EXTRAS[$1]}" != none ] ; then
+                                                #Run specific commands based on each server listed of the servers.cfg
+                        echo -e "${LIGHTGREEN}Running Extra_Commands For ${GREEN}${SERVER_NAME[$1]}${LIGHTGREEN}.${NOCOLOR}"
+                        command "cd $SERVER_SETTINGS/${SERVER_PATH[$1]} && ${SERVER_EXTRAS[$1]}"
+                    fi
+                                                #Either this is the Spigot.jar or Bungeecord as listed in the servers.cfg
+                    if [ -f "$SERVER_SETTINGS/${SERVER_CORE[$1]}" ] ; then
+                        { cp "$SERVER_SETTINGS/${SERVER_CORE[$1]}" "${SERVER_SETTINGS}/${SERVER_PATH[$1]}/${SERVER_CORE[$1]}"
+                        echo -e "   ${LIGHTGREEN}Copied ${GREEN}${SERVER_CORE[$1]}${LIGHTGREEN} from ${GREEN}${SERVER_SETTINGS}${LIGHTGREEN}!${NOCOLOR}"
+                        }
+                    else {
+                            echo -e "\n${RED}ERROR! ${LIGHTGREEN}${SERVER_CORE[$1]} ${RED}Not Found!${NOCOLOR}"
+                            echo -e "${LIGHTGREEN}   Has ${YELLOW}service mcservers update spigot/minecraft/snapshot/bungee/all${LIGHTGREEN} been ran?${NOCOLOR}"
+                            echo -e "${LIGHTGREEN}   If you have recently ran ${YELLOW}update${LIGHTGREEN}, did output a different ${GREEN}filename/version${LIGHTGREEN} or ${GREEN} failed?${NOCOLOR}"
+                            echo -e "${LIGHTGREEN}   Update your ${GREEN}servers.cfg${LIGHTGREEN} in ${GREEN}${SERVER_SETTINGS}${NOCOLOR}"
                         }
                     fi
-                done
-                cd "$SERVER_SETTINGS/${SERVER_PATH[$1]}" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS}/${SERVER_PATH[$1]} from " pwd "!${NOCOLOR}\n" && exit; }
-                command "screen -dmS ${SERVER_NAME[$1]} ${START_ARGS[$1]} -Dserver=${SERVER_NAME[$1]} ${SERVER_CORE[$1]}"
-                echo -e "   ${GREEN}Starting!${NOCOLOR}"
-            else
-                echo -e "   ${YELLOW}DISABLED!${NOCOLOR}"
-            fi
+                    exist="true"
+                else
+                    {
+                        if [ "$2" != "skip" ] ; then
+                            echo -e "\n${RED}ERROR! ${YELLOW}${SERVER_PATH[$1]}${LIGHTGREEN} in ${YELLOW}${SERVER_SETTINGS}${LIGHTGREEN} Doesn't Exist!${NOCOLOR}"
+                            echo -e "${LIGHTGREEN}Should ${GREEN}${SERVER_PATH[$1]}${LIGHTGREEN} be created and started?${NOCOLOR}"
+                            yes_or_no yn
+                            case "$yn" in
+                                Y) {
+                                        echo -e "\n${LIGHTGREEN}Creating ${GREEN}${SERVER_PATH[$1]} ${LIGHTGREEN}in ${GREEN}${SERVER_SETTINGS}${LIGHTGREEN}...${NOCOLOR}"
+                                        cd "${SERVER_SETTINGS}" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+                                        mkdir "${SERVER_PATH[$1]}"
+                                        echo -e "${LIGHTGREEN}Created.${NOCOLOR}"
+                                    };;
+                                N) {
+                                        echo -e "${GREEN}$SERVER_PATH[$1]${LIGHTGREEN} Not Created. ${GREEN}${SERVER_NAME[$1]}${LIGHTGREEN} cannot start without it."
+                                    };;
+                            esac
+                        fi
+                    }
+                fi
+            done
+            cd "$SERVER_SETTINGS/${SERVER_PATH[$1]}" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS}/${SERVER_PATH[$1]} from " pwd "!${NOCOLOR}\n" && exit; }
+            command "screen -dmS ${SERVER_NAME[$1]} ${START_ARGS[$1]} -Dserver=${SERVER_NAME[$1]} ${SERVER_CORE[$1]}"
+            echo -e "   ${GREEN}Starting!${NOCOLOR}"
         fi
         exist="false"
     fi
@@ -411,12 +407,12 @@ create_serverscfg(){
         echo ' '
         echo '# Survival Server Settings'
         echo 'SURVIVAL=0                                                                                                          #Server Group Unique Name. Must be different than other server groups. Increment the ID# for each additional server listing. Best if you keep these in order.'
-        echo 'SERVER_ENABLED[$SURVIVAL]="true"                                                                                    #Is this server allowed to start? If Yes, "true", otherwise "false."'
+        echo 'SERVER_ENABLED[$SURVIVAL]="enabled"                                                                                 #Is this server allowed to start? If Yes, "true", otherwise "false."'
         echo 'SERVER_NAME[$SURVIVAL]="Survival"                                                                                   #Server Group Display/Screen Name. Can be anything.'
         echo 'SERVER_PATH[$SURVIVAL]="Survival"                                                                                   #Server root directory where the server_core.jar will be saved and executed? Directory must be in same location as this config.'
         echo 'SERVER_CORE[$SURVIVAL]="Spigot.jar"                                                                                 #Server Core .jar name to run off of. Good use if using custom .jar files.'
         echo 'SERVER_EXTRAS[$SURVIVAL]="none"                                                                                     #If none to place, place: "none". Ex: "rm /plugins/plugin/data.txt && command two;"'
-        echo 'START_ARGS[$SURVIVAL]="java -server -Xmx1024M -XX:+UseConcMarkSweepGC -jar"                    #Server starting arguments. Best only to change the -Xmx for memory use and server.jar at the end.' #Removed max perm size, no longer needed since MC 1.8
+        echo 'START_ARGS[$SURVIVAL]="java -server -Xmx1024M -XX:+UseConcMarkSweepGC -jar"                                         #Server starting arguments. Best only to change the -Xmx for memory use and server.jar at the end.' #Removed max perm size, no longer needed since MC 1.8
         echo 'SHUTDOWN_CMD[$SURVIVAL]="stop"                                                                                      #Command used to tell the server, nicely, to shut down via screen/console.'
         echo 'MSG_CMD[$SURVIVAL]="say"                                                                                            #Command used to announce the SHUTDOWN_MSG1 and 2 prior to shutdown. Used for announced countdown.'
         echo 'SHUTDOWN_MAX_WAIT[$SURVIVAL]=30                                                                                     #How long to wait until server is shut down completely, before continueing on with the script. If server is down before the set number, the script exits.'
@@ -426,7 +422,7 @@ create_serverscfg(){
         echo ' '
         echo '# BungeeCord Server Settings'
         echo 'BUNGEE=1'
-        echo 'SERVER_ENABLED[$BUNGEE]=true'
+        echo 'SERVER_ENABLED[$BUNGEE]="manual"'
         echo 'SERVER_NAME[$BUNGEE]="BungeeCord"'
         echo 'SERVER_PATH[$BUNGEE]="BungeeCord"'
         echo 'SERVER_CORE[$BUNGEE]="BungeeCord.jar"'
@@ -839,7 +835,11 @@ SERVERS=${#SERVER_NAME[@]}
 case "$1" in
     start){     #Until I find a better way to have start/stop the server upon system start/stop, going to the basics.
         for (( i = 0; i < $SERVERS; i++ )) ; do
-            start_servers $i skip
+            if [ "${SERVER_ENABLED[i]}" == enable ] ; then
+                start_servers $i skip
+            else
+                echo -e "   ${YELLOW}Not Enabled!${NOCOLOR}"
+            fi
             sleep 2
         done
     };;
@@ -1080,7 +1080,12 @@ case "$1" in
                 echo " "
                 if [ "$3" == "all" ] ; then 
                     { for (( i = 0; i < $SERVERS; i++ )) ; do
-                        start_servers $i "$4"
+                        if [ "${SERVER_ENABLED[$i]}" == enable ] ; then
+                            start_servers $i "$4"
+                        else
+                            echo -e "${LIGHTGREEN}Server ID:${GREEN}$i ${SERVER_NAME[$i]}${LIGHTGREEN}...   ${YELLOW}Not Enabled!${NOCOLOR}"
+                            echo -e "${LIGHTGREEN}          If ${GREEN}${SERVER_NAME[$i]}${LIGHTGREEN} Needs To Be Running: ${YELLOW}service mcservers server start $i${NOCOLOR}"
+                        fi
                         sleep 2
                     done
                     echo " "
@@ -1088,8 +1093,12 @@ case "$1" in
                     }
                 else {
                     if [[ "$3" =~ ^[0-9]+$ ]] ; then
-                        start_servers "$3"
-                        echo " "
+                        if [ "${SERVER_ENABLED[$3]}" == enable ] || [ "${SERVER_ENABLED[$3]}" == manual ]; then
+                            start_servers "$3"
+                            echo " "
+                        else
+                            echo -e "${LIGHTGREEN}Server ID:${GREEN}$i ${SERVER_NAME[$i]}${LIGHTGREEN}...   ${RED}DISABLED!${NOCOLOR}"
+                        fi
                         show_screens
                     else
                         not_a_number
@@ -1121,14 +1130,22 @@ case "$1" in
                 echo " "
                 if [ "$3" == "all" ] ; then 
                     for (( i = 0; i < $SERVERS; i++ )) ; do
-                        restart_servers $i "$4"
+                        if [ "${SERVER_ENABLED[$i]}" == enable ] || [ "${SERVER_ENABLED[$i]}" == manual ] ; then
+                            restart_servers $i "$4"
+                        else
+                            echo -e "${YELLOW}Restarting ${LIGHTGREEN}Server ID:${GREEN}$1 ${SERVER_NAME[$1]}...    ${YELLOW}DISABLED${NOCOLOR}"
+                        fi
                         sleep 5
                     done
                     echo " "
                     show_screens
                 else {
                     if [[ "$3" =~ ^[0-9]+$ ]] ; then
-                        restart_servers "$3"
+                        if [ "${SERVER_ENABLED[$3]}" == enable ] || [ "${SERVER_ENABLED[$3]}" == manual ] ; then
+                            restart_servers "$3"
+                        else
+                            echo -e "${YELLOW}Restarting ${LIGHTGREEN}Server ID:${GREEN}$3 ${SERVER_NAME[$3]}...    ${RED}DISABLED!${NOCOLOR}"
+                        fi
                         echo " "
                         show_screens
                     else
