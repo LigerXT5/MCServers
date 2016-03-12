@@ -39,8 +39,62 @@ exist="false"
 SERVER_SETTINGS="$USER_DIRECTORY/$MINECRAFT_DIRECTORY"
 if [ -f "$SERVER_SETTINGS/servers.cfg" ] ; then
     . "$SERVER_SETTINGS/servers.cfg"
-else
-    create_serverscfg
+else {
+#    create_serverscfg
+echo -e "\n${RED}ERROR! ${GREEN}${SERVER_SETTINGS}/servers.cfg ${RED}Not Found!${NOCOLOR}"
+    echo -e "${YELLOW}Creating Default Template...${NOCOLOR}" 
+    cd "$SERVER_SETTINGS" ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+    {
+        echo '# Server Settings servers.cfg'
+        echo ' '
+        echo 'BUNGEECORD_URL="http://ci.md-5.net/job/BungeeCord/lastBuild/artifact/bootstrap/target/BungeeCord.jar"               #Newest Builds of Bungeecord.jar. Type "none" if you do not wish to download this.'
+        echo 'BUNGEECORD="BungeeCord.jar"                                                                                         #Choice name of saved and displayed .jar'
+        echo 'BUILDTOOLS_URL="https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar" #Newest Builds of Buildtools. Type "none" if you do not wish to download this.'
+        echo 'BUILDTOOLS_BUILD_VERSION=""                                                                                         #Leave blank for current release version of MC. If specific build wanted, add: --rev 1.8, --rev 1.8.8, --rev latest.'
+        echo 'BUILDTOOLS_SPIGOT="spigot-1.8.8.jar"                                                                                #Make sure this is the exact name of the spigot file output from BuildTools.jar.'
+        echo 'BUILDTOOLS_OUTPUT="Spigot.jar"                                                                                      #Choice name of buildtools.jar output to be renamed to when copied out of buildtools.'
+        echo 'SPIGOT_LATEST="Spigot.jar"                                                                                          #Choice name of saved and displayed .jar'
+        echo 'MINECRAFT_SERVER_URL="https://s3.amazonaws.com/Minecraft.Download/versions/1.8.8/minecraft_server.1.8.8.jar"        #Choice version of minecraft_server.jar. Update URL when Mojang releases newer versions.  Type "none" if you do not wish to download this.'
+        echo 'MINECRAFT_SERVER="Minecraft_Server.jar"                                                                             #Choice name of saved and displayed .jar'
+        echo 'MINECRAFT_SNAPSHOT_URL="none"                                                                                       #Choice version of minecraft__snapshot_server.jar. Update URL to your choice. Can be used for custom versions of MC/Forge/Sponge/etc.  Type "none" if you do not wish to download this.'
+        echo 'MINECRAFT_SNAPSHOT="Minecraft_Snapshot_Server.jar"                                                                  #Choice name of saved and displayed .jar'
+        echo ' '
+        echo 'SHOW_SCREENS="True"                                                                                                 #Do you want to show the screen listings after server Start, Stop, and Restarts?'
+        echo ' '
+        echo '# Survival Server Settings'
+        echo 'SURVIVAL=0                                                                                                          #Server Group Unique Name. Must be different than other server groups. Increment the ID# for each additional server listing. Best if you keep these in order.'
+        echo 'SERVER_ENABLED[$SURVIVAL]="true"                                                                                    #Is this server allowed to start? If Yes, "true", otherwise "false."'
+        echo 'SERVER_NAME[$SURVIVAL]="Survival"                                                                                   #Server Group Display/Screen Name. Can be anything.'
+        echo 'SERVER_PATH[$SURVIVAL]="Survival"                                                                                   #Server root directory where the server_core.jar will be saved and executed? Directory must be in same location as this config.'
+        echo 'SERVER_CORE[$SURVIVAL]="Spigot.jar"                                                                                 #Server Core .jar name to run off of. Good use if using custom .jar files.'
+        echo 'SERVER_EXTRAS[$SURVIVAL]="none"                                                                                     #If none to place, place: "none". Ex: "rm /plugins/plugin/data.txt && command two;"'
+        echo 'START_ARGS[$SURVIVAL]="java -server -Xmx1024M -XX:+UseConcMarkSweepGC -jar"                    #Server starting arguments. Best only to change the -Xmx for memory use and server.jar at the end.' #Removed max perm size, no longer needed since MC 1.8
+        echo 'SHUTDOWN_CMD[$SURVIVAL]="stop"                                                                                      #Command used to tell the server, nicely, to shut down via screen/console.'
+        echo 'MSG_CMD[$SURVIVAL]="say"                                                                                            #Command used to announce the SHUTDOWN_MSG1 and 2 prior to shutdown. Used for announced countdown.'
+        echo 'SHUTDOWN_MAX_WAIT[$SURVIVAL]=30                                                                                     #How long to wait until server is shut down completely, before continueing on with the script. If server is down before the set number, the script exits.'
+        echo 'SHUTDOWN_SECONDS[$SURVIVAL]=20                                                                                      #Number of seconds until MSG_CMD is used to shut down. Each second repeates the shutdown_msgs as the countdown decreases.'
+        echo 'SHUTDOWN_MSG1[$SURVIVAL]="&KD&rShutting down in "                                                                   #First half of the shutdown message, followed by the number of seconds remaining.'
+        echo 'SHUTDOWN_MSG2[$SURVIVAL]=" Seconds&KD&r."                                                                           #Second half of the shutdown message, after the number of seconds remaining.'
+        echo ' '
+        echo '# BungeeCord Server Settings'
+        echo 'BUNGEE=1'
+        echo 'SERVER_ENABLED[$BUNGEE]=true'
+        echo 'SERVER_NAME[$BUNGEE]="BungeeCord"'
+        echo 'SERVER_PATH[$BUNGEE]="BungeeCord"'
+        echo 'SERVER_CORE[$BUNGEE]="BungeeCord.jar"'
+        echo 'SERVER_EXTRAS[$BUNGEE]="none"'
+        echo 'START_ARGS[$BUNGEE]="java -server -Xmx200M -XX:+UseConcMarkSweepGC -jar -DIReallyKnowWhatIaAmDoingISwear"'
+        echo 'SHUTDOWN_CMD[$BUNGEE]="end"'
+        echo 'MSG_CMD[$BUNGEE]="alert"'
+        echo 'SHUTDOWN_MAX_WAIT[$BUNGEE]=30'
+        echo 'SHUTDOWN_SECONDS[$BUNGEE]=5'
+        echo 'SHUTDOWN_MSG1[$BUNGEE]="Shutting down in "'
+        echo 'SHUTDOWN_MSG2[$BUNGEE]=" Seconds."'
+    } >> servers.cfg
+
+    sleep 1
+    echo -e "${LIGHTGREEN}Config ${GREEN}servers.cfg${LIGHTGREEN} created in ${GREEN}$SERVFER_SETTIGNS${LIGHTGREEN}.${NOCOLOR}"
+    }
 fi
 #
 #
@@ -66,7 +120,7 @@ get_running() {
     if is_running "$1" ; then
         echo -e "${LIGHTGREEN}Server ID:${GREEN}$1 ${SERVER_NAME[$1]}${LIGHTGREEN}: Active.${NOCOLOR}"
     else
-        if [ "${SERVER_ENABLED[$1]}" = enable ] || [ "${SERVER_ENABLED[$1]}" = manual ] ; then
+        if [ "${SERVER_ENABLED[$1]}" = true ] ; then
             echo -e "${LIGHTGREEN}Server ID:${GREEN}$1 ${SERVER_NAME[$1]}${LIGHTGREEN}: ${RED}Offline.${NOCOLOR}"
         else
             echo -e "${LIGHTGREEN}Server ID:${GREEN}$1 ${SERVER_NAME[$1]}${LIGHTGREEN}: ${YELLOW}Disabled.${NOCOLOR}"
@@ -80,50 +134,54 @@ start_servers() {
         if is_running "$1" ; then
             echo -e "   ${GREEN}Running!${NOCOLOR}" 
         else
-            while [ "$exist" == "false" ]; do
-                if [ -d "$SERVER_SETTINGS/${SERVER_PATH}" ] ; then
-                    if [ "${SERVER_EXTRAS[$1]}" != none ] ; then
-                                                #Run specific commands based on each server listed of the servers.cfg
-                        echo -e "${LIGHTGREEN}Running Extra_Commands For ${GREEN}${SERVER_NAME[$1]}${LIGHTGREEN}.${NOCOLOR}"
-                        command "cd $SERVER_SETTINGS/${SERVER_PATH[$1]} && ${SERVER_EXTRAS[$1]}"
-                    fi
-                                                #Either this is the Spigot.jar or Bungeecord as listed in the servers.cfg
-                    if [ -f "$SERVER_SETTINGS/${SERVER_CORE[$1]}" ] ; then
-                        { cp "$SERVER_SETTINGS/${SERVER_CORE[$1]}" "${SERVER_SETTINGS}/${SERVER_PATH[$1]}/${SERVER_CORE[$1]}"
-                        echo -e "   ${LIGHTGREEN}Copied ${GREEN}${SERVER_CORE[$1]}${LIGHTGREEN} from ${GREEN}${SERVER_SETTINGS}${LIGHTGREEN}!${NOCOLOR}"
-                        }
-                    else {
-                            echo -e "\n${RED}ERROR! ${LIGHTGREEN}${SERVER_CORE[$1]} ${RED}Not Found!${NOCOLOR}"
-                            echo -e "${LIGHTGREEN}   Has ${YELLOW}service mcservers update spigot/minecraft/snapshot/bungee/all${LIGHTGREEN} been ran?${NOCOLOR}"
-                            echo -e "${LIGHTGREEN}   If you have recently ran ${YELLOW}update${LIGHTGREEN}, did output a different ${GREEN}filename/version${LIGHTGREEN} or ${GREEN} failed?${NOCOLOR}"
-                            echo -e "${LIGHTGREEN}   Update your ${GREEN}servers.cfg${LIGHTGREEN} in ${GREEN}${SERVER_SETTINGS}${NOCOLOR}"
-                        }
-                    fi
-                    exist="true"
-                else
-                    {
-                        if [ "$2" != "skip" ] ; then
-                            echo -e "\n${RED}ERROR! ${YELLOW}${SERVER_PATH[$1]}${LIGHTGREEN} in ${YELLOW}${SERVER_SETTINGS}${LIGHTGREEN} Doesn't Exist!${NOCOLOR}"
-                            echo -e "${LIGHTGREEN}Should ${GREEN}${SERVER_PATH[$1]}${LIGHTGREEN} be created and started?${NOCOLOR}"
-                            yes_or_no yn
-                            case "$yn" in
-                                Y) {
-                                        echo -e "\n${LIGHTGREEN}Creating ${GREEN}${SERVER_PATH[$1]} ${LIGHTGREEN}in ${GREEN}${SERVER_SETTINGS}${LIGHTGREEN}...${NOCOLOR}"
-                                        cd "${SERVER_SETTINGS}" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
-                                        mkdir "${SERVER_PATH[$1]}"
-                                        echo -e "${LIGHTGREEN}Created.${NOCOLOR}"
-                                    };;
-                                N) {
-                                        echo -e "${GREEN}$SERVER_PATH[$1]${LIGHTGREEN} Not Created. ${GREEN}${SERVER_NAME[$1]}${LIGHTGREEN} cannot start without it."
-                                    };;
-                            esac
+            if [ "${SERVER_ENABLED[$1]}" == true ] ; then
+                while [ "$exist" == "false" ]; do
+                    if [ -d "$SERVER_SETTINGS/${SERVER_PATH}" ] ; then
+                        if [ "${SERVER_EXTRAS[$1]}" != none ] ; then
+                                                    #Run specific commands based on each server listed of the servers.cfg
+                            echo -e "${LIGHTGREEN}Running Extra_Commands For ${GREEN}${SERVER_NAME[$1]}${LIGHTGREEN}.${NOCOLOR}"
+                            command "cd $SERVER_SETTINGS/${SERVER_PATH[$1]} && ${SERVER_EXTRAS[$1]}"
                         fi
-                    }
-                fi
-            done
-            cd "$SERVER_SETTINGS/${SERVER_PATH[$1]}" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS}/${SERVER_PATH[$1]} from " pwd "!${NOCOLOR}\n" && exit; }
-            command "screen -dmS ${SERVER_NAME[$1]} ${START_ARGS[$1]} -Dserver=${SERVER_NAME[$1]} ${SERVER_CORE[$1]}"
-            echo -e "   ${GREEN}Starting!${NOCOLOR}"
+                                                    #Either this is the Spigot.jar or Bungeecord as listed in the servers.cfg
+                        if [ -f "$SERVER_SETTINGS/${SERVER_CORE[$1]}" ] ; then
+                            { cp "$SERVER_SETTINGS/${SERVER_CORE[$1]}" "${SERVER_SETTINGS}/${SERVER_PATH[$1]}/${SERVER_CORE[$1]}"
+                            echo -e "   ${LIGHTGREEN}Copied ${GREEN}${SERVER_CORE[$1]}${LIGHTGREEN} from ${GREEN}${SERVER_SETTINGS}${LIGHTGREEN}!${NOCOLOR}"
+                            }
+                        else {
+                                echo -e "\n${RED}ERROR! ${LIGHTGREEN}${SERVER_CORE[$1]} ${RED}Not Found!${NOCOLOR}"
+                                echo -e "${LIGHTGREEN}   Has ${YELLOW}service mcservers update spigot/minecraft/snapshot/bungee/all${LIGHTGREEN} been ran?${NOCOLOR}"
+                                echo -e "${LIGHTGREEN}   If you have recently ran ${YELLOW}update${LIGHTGREEN}, did output a different ${GREEN}filename/version${LIGHTGREEN} or ${GREEN} failed?${NOCOLOR}"
+                                echo -e "${LIGHTGREEN}   Update your ${GREEN}servers.cfg${LIGHTGREEN} in ${GREEN}${SERVER_SETTINGS}${NOCOLOR}"
+                            }
+                        fi
+                        exist="true"
+                    else
+                        {
+                            if [ "$2" != "skip" ] ; then
+                                echo -e "\n${RED}ERROR! ${YELLOW}${SERVER_PATH[$1]}${LIGHTGREEN} in ${YELLOW}${SERVER_SETTINGS}${LIGHTGREEN} Doesn't Exist!${NOCOLOR}"
+                                echo -e "${LIGHTGREEN}Should ${GREEN}${SERVER_PATH[$1]}${LIGHTGREEN} be created and started?${NOCOLOR}"
+                                yes_or_no yn
+                                case "$yn" in
+                                    Y) {
+                                            echo -e "\n${LIGHTGREEN}Creating ${GREEN}${SERVER_PATH[$1]} ${LIGHTGREEN}in ${GREEN}${SERVER_SETTINGS}${LIGHTGREEN}...${NOCOLOR}"
+                                            cd "${SERVER_SETTINGS}" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+                                            mkdir "${SERVER_PATH[$1]}"
+                                            echo -e "${LIGHTGREEN}Created.${NOCOLOR}"
+                                        };;
+                                    N) {
+                                            echo -e "${GREEN}$SERVER_PATH[$1]${LIGHTGREEN} Not Created. ${GREEN}${SERVER_NAME[$1]}${LIGHTGREEN} cannot start without it."
+                                        };;
+                                esac
+                            fi
+                        }
+                    fi
+                done
+                cd "$SERVER_SETTINGS/${SERVER_PATH[$1]}" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS}/${SERVER_PATH[$1]} from " pwd "!${NOCOLOR}\n" && exit; }
+                command "screen -dmS ${SERVER_NAME[$1]} ${START_ARGS[$1]} -Dserver=${SERVER_NAME[$1]} ${SERVER_CORE[$1]}"
+                echo -e "   ${GREEN}Starting!${NOCOLOR}"
+            else
+                echo -e "   ${YELLOW}DISABLED!${NOCOLOR}"
+            fi
         fi
         exist="false"
     fi
@@ -214,7 +272,8 @@ update_spigot(){
         echo -e "\n${LIGHTGREEN}Downloading ${GREEN}BuildTools.jar${LIGHTGREEN}...${NOCOLOR}"
         curl "${BUILDTOOLS_URL}" -o "BuildTools.jar"
         echo -e "\n${LIGHTGREEN}Running ${GREEN}Buildtools.jar${NOCOLOR}\n"
-        HOME=$USER_DIRECTORY java -jar "BuildTools.jar"
+        HOME=$USER_DIRECTORY java -jar "BuildTools.jar" --rev 1.9
+        #${BUILDTOOL_BUILD_VERSION}
         echo -e "\n${LIGHTGREEN}Copying${GREEN} ${BUILDTOOLS_SPIGOT} ${LIGHTGREEN}to${GREEN} $SERVER_SETTINGS ${LIGHTGREEN}as${GREEN} ${BUILDTOOLS_OUTPUT}${LIGHTGREEN}.${NOCOLOR}"
         if [ -f "${BUILDTOOLS_SPIGOT}" ] ; then
             { command "cp $SERVER_SETTINGS/buildtools/${BUILDTOOLS_SPIGOT} ../${BUILDTOOLS_OUTPUT}"
@@ -385,6 +444,7 @@ server_exist(){
 not_a_number(){
     echo -e "\n${LIGHTGREEN}Server ID ${RED}Must Be A Number!${NOCOLOR}"
 }
+
 create_serverscfg(){
     echo -e "\n${RED}ERROR! ${GREEN}${SERVER_SETTINGS}/servers.cfg ${RED}Not Found!${NOCOLOR}"
     echo -e "${YELLOW}Creating Default Template..."
@@ -407,12 +467,12 @@ create_serverscfg(){
         echo ' '
         echo '# Survival Server Settings'
         echo 'SURVIVAL=0                                                                                                          #Server Group Unique Name. Must be different than other server groups. Increment the ID# for each additional server listing. Best if you keep these in order.'
-        echo 'SERVER_ENABLED[$SURVIVAL]="enabled"                                                                                 #Is this server allowed to start? If Yes, "true", otherwise "false."'
+        echo 'SERVER_ENABLED[$SURVIVAL]="true"                                                                                    #Is this server allowed to start? If Yes, "true", otherwise "false."'
         echo 'SERVER_NAME[$SURVIVAL]="Survival"                                                                                   #Server Group Display/Screen Name. Can be anything.'
         echo 'SERVER_PATH[$SURVIVAL]="Survival"                                                                                   #Server root directory where the server_core.jar will be saved and executed? Directory must be in same location as this config.'
         echo 'SERVER_CORE[$SURVIVAL]="Spigot.jar"                                                                                 #Server Core .jar name to run off of. Good use if using custom .jar files.'
         echo 'SERVER_EXTRAS[$SURVIVAL]="none"                                                                                     #If none to place, place: "none". Ex: "rm /plugins/plugin/data.txt && command two;"'
-        echo 'START_ARGS[$SURVIVAL]="java -server -Xmx1024M -XX:+UseConcMarkSweepGC -jar"                                         #Server starting arguments. Best only to change the -Xmx for memory use and server.jar at the end.' #Removed max perm size, no longer needed since MC 1.8
+        echo 'START_ARGS[$SURVIVAL]="java -server -Xmx1024M -XX:+UseConcMarkSweepGC -jar"                    #Server starting arguments. Best only to change the -Xmx for memory use and server.jar at the end.' #Removed max perm size, no longer needed since MC 1.8
         echo 'SHUTDOWN_CMD[$SURVIVAL]="stop"                                                                                      #Command used to tell the server, nicely, to shut down via screen/console.'
         echo 'MSG_CMD[$SURVIVAL]="say"                                                                                            #Command used to announce the SHUTDOWN_MSG1 and 2 prior to shutdown. Used for announced countdown.'
         echo 'SHUTDOWN_MAX_WAIT[$SURVIVAL]=30                                                                                     #How long to wait until server is shut down completely, before continueing on with the script. If server is down before the set number, the script exits.'
@@ -422,7 +482,7 @@ create_serverscfg(){
         echo ' '
         echo '# BungeeCord Server Settings'
         echo 'BUNGEE=1'
-        echo 'SERVER_ENABLED[$BUNGEE]="manual"'
+        echo 'SERVER_ENABLED[$BUNGEE]=true'
         echo 'SERVER_NAME[$BUNGEE]="BungeeCord"'
         echo 'SERVER_PATH[$BUNGEE]="BungeeCord"'
         echo 'SERVER_CORE[$BUNGEE]="BungeeCord.jar"'
@@ -835,11 +895,7 @@ SERVERS=${#SERVER_NAME[@]}
 case "$1" in
     start){     #Until I find a better way to have start/stop the server upon system start/stop, going to the basics.
         for (( i = 0; i < $SERVERS; i++ )) ; do
-            if [ "${SERVER_ENABLED[i]}" == enable ] ; then
-                start_servers $i skip
-            else
-                echo -e "   ${YELLOW}Not Enabled!${NOCOLOR}"
-            fi
+            start_servers $i skip
             sleep 2
         done
     };;
@@ -1080,12 +1136,7 @@ case "$1" in
                 echo " "
                 if [ "$3" == "all" ] ; then 
                     { for (( i = 0; i < $SERVERS; i++ )) ; do
-                        if [ "${SERVER_ENABLED[$i]}" == enable ] ; then
-                            start_servers $i "$4"
-                        else
-                            echo -e "${LIGHTGREEN}Server ID:${GREEN}$i ${SERVER_NAME[$i]}${LIGHTGREEN}...   ${YELLOW}Not Enabled!${NOCOLOR}"
-                            echo -e "${LIGHTGREEN}          If ${GREEN}${SERVER_NAME[$i]}${LIGHTGREEN} Needs To Be Running: ${YELLOW}service mcservers server start $i${NOCOLOR}"
-                        fi
+                        start_servers $i "$4"
                         sleep 2
                     done
                     echo " "
@@ -1093,12 +1144,8 @@ case "$1" in
                     }
                 else {
                     if [[ "$3" =~ ^[0-9]+$ ]] ; then
-                        if [ "${SERVER_ENABLED[$3]}" == enable ] || [ "${SERVER_ENABLED[$3]}" == manual ]; then
-                            start_servers "$3"
-                            echo " "
-                        else
-                            echo -e "${LIGHTGREEN}Server ID:${GREEN}$i ${SERVER_NAME[$i]}${LIGHTGREEN}...   ${RED}DISABLED!${NOCOLOR}"
-                        fi
+                        start_servers "$3"
+                        echo " "
                         show_screens
                     else
                         not_a_number
@@ -1130,22 +1177,14 @@ case "$1" in
                 echo " "
                 if [ "$3" == "all" ] ; then 
                     for (( i = 0; i < $SERVERS; i++ )) ; do
-                        if [ "${SERVER_ENABLED[$i]}" == enable ] || [ "${SERVER_ENABLED[$i]}" == manual ] ; then
-                            restart_servers $i "$4"
-                        else
-                            echo -e "${YELLOW}Restarting ${LIGHTGREEN}Server ID:${GREEN}$1 ${SERVER_NAME[$1]}...    ${YELLOW}DISABLED${NOCOLOR}"
-                        fi
+                        restart_servers $i "$4"
                         sleep 5
                     done
                     echo " "
                     show_screens
                 else {
                     if [[ "$3" =~ ^[0-9]+$ ]] ; then
-                        if [ "${SERVER_ENABLED[$3]}" == enable ] || [ "${SERVER_ENABLED[$3]}" == manual ] ; then
-                            restart_servers "$3"
-                        else
-                            echo -e "${YELLOW}Restarting ${LIGHTGREEN}Server ID:${GREEN}$3 ${SERVER_NAME[$3]}...    ${RED}DISABLED!${NOCOLOR}"
-                        fi
+                        restart_servers "$3"
                         echo " "
                         show_screens
                     else
@@ -1275,7 +1314,7 @@ case "$1" in
             echo -e "   ${LIGHTGREEN} Start ID#/All${NOCOLOR}        - ${LIGHTGREEN}Start select server.${NOCOLOR}"             #Hidden note: If mcservers server start all skip, script will skip the user answer to create missing server_path directories that are missing.
             echo -e "   ${LIGHTGREEN} Stop ID#/All${NOCOLOR}         - ${LIGHTGREEN}Stop select server.${NOCOLOR}"
             echo -e "   ${LIGHTGREEN} Restart ID#/All${NOCOLOR}      - ${LIGHTGREEN}Restart select server.${NOCOLOR}"           #Hidden note: If mcservers server start all skip, script will skip the user answer to create missing server_path directories that are missing.
-            echo -e "\n${LIGHTGREEN} Update +${NOCOLOR}                  - ${LIGHTGREEN}Update to latest releases.${NOCOLOR}"
+            echo -e "\n${LIGHTGREEN} Update +${NOCOLOR}                 - ${LIGHTGREEN}Update to latest releases.${NOCOLOR}"
             echo -e "   ${LIGHTGREEN} Spigot${NOCOLOR}               - ${LIGHTGREEN}Update Spigot.jar to Latest Build.${NOCOLOR}"
             echo -e "   ${LIGHTGREEN} Minecraft${NOCOLOR}            - ${LIGHTGREEN}Download Minecraft_Server.jar.${NOCOLOR}"
             echo -e "   ${LIGHTGREEN} Snapshot${NOCOLOR}             - ${LIGHTGREEN}Download Snapshot.jar.${NOCOLOR}"
