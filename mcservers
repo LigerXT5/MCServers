@@ -50,14 +50,15 @@ echo -e "\n${RED}ERROR! ${GREEN}${SERVER_SETTINGS}/servers.cfg ${RED}Not Found!$
         echo 'BUNGEECORD_URL="http://ci.md-5.net/job/BungeeCord/lastBuild/artifact/bootstrap/target/BungeeCord.jar"               #Newest Builds of Bungeecord.jar. Type "none" if you do not wish to download this.'
         echo 'BUNGEECORD="BungeeCord.jar"                                                                                         #Choice name of saved and displayed .jar'
         echo 'BUILDTOOLS_URL="https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar" #Newest Builds of Buildtools. Type "none" if you do not wish to download this.'
-        echo 'BUILDTOOLS_BUILD_VERSION=""                                                                                         #Leave blank for current release version of MC. If specific build wanted, add: --rev 1.8, --rev 1.8.8, --rev latest.'
-        echo 'BUILDTOOLS_SPIGOT="spigot-1.8.8.jar"                                                                                #Make sure this is the exact name of the spigot file output from BuildTools.jar.'
-        echo 'BUILDTOOLS_OUTPUT="Spigot.jar"                                                                                      #Choice name of buildtools.jar output to be renamed to when copied out of buildtools.'
-        echo 'SPIGOT_LATEST="Spigot.jar"                                                                                          #Choice name of saved and displayed .jar'
-        echo 'MINECRAFT_SERVER_URL="https://s3.amazonaws.com/Minecraft.Download/versions/1.8.8/minecraft_server.1.8.8.jar"        #Choice version of minecraft_server.jar. Update URL when Mojang releases newer versions.  Type "none" if you do not wish to download this.'
+        echo 'BUILDTOOLS_BUILD_VERSION="--rev latest"                                                                                #Leave blank for current release version of MC. If specific build wanted, add: --rev 1.8, --rev 1.8.8, --rev latest.'
+        echo 'BUILDTOOLS_SPIGOT="spigot-1.9.2.jar"                                                                                  #Make sure this is the exact name of the spigot file output from BuildTools.jar.'
+        echo 'BUILDTOOLS_OUTPUT="Spigot-1.9.2.jar"                                                                                    #Choice name of buildtools.jar output to be renamed to when copied out of buildtools.'
+        echo 'SPIGOT_LATEST="Spigot192.jar"                                                                                        #Choice name of saved and displayed .jar'
+        echo 'MINECRAFT_SERVER_URL="https://s3.amazonaws.com/Minecraft.Download/versions/1.9/minecraft_server.1.9.jar"            #Choice version of minecraft_server.jar. Update URL when Mojang releases newer versions.  Type "none" if you do not wish to download this.'
         echo 'MINECRAFT_SERVER="Minecraft_Server.jar"                                                                             #Choice name of saved and displayed .jar'
         echo 'MINECRAFT_SNAPSHOT_URL="none"                                                                                       #Choice version of minecraft__snapshot_server.jar. Update URL to your choice. Can be used for custom versions of MC/Forge/Sponge/etc.  Type "none" if you do not wish to download this.'
         echo 'MINECRAFT_SNAPSHOT="Minecraft_Snapshot_Server.jar"                                                                  #Choice name of saved and displayed .jar'
+        echo 'MANUAL_BACKUPS_LOCATION="none"                                                                                      #Choice of where backups are saved. Default: none = Disables Backup until directory is set.'
         echo ' '
         echo 'SHOW_SCREENS="True"                                                                                                 #Do you want to show the screen listings after server Start, Stop, and Restarts?'
         echo ' '
@@ -66,9 +67,9 @@ echo -e "\n${RED}ERROR! ${GREEN}${SERVER_SETTINGS}/servers.cfg ${RED}Not Found!$
         echo 'SERVER_ENABLED[$SURVIVAL]="true"                                                                                    #Is this server allowed to start? If Yes, "true", otherwise "false."'
         echo 'SERVER_NAME[$SURVIVAL]="Survival"                                                                                   #Server Group Display/Screen Name. Can be anything.'
         echo 'SERVER_PATH[$SURVIVAL]="Survival"                                                                                   #Server root directory where the server_core.jar will be saved and executed? Directory must be in same location as this config.'
-        echo 'SERVER_CORE[$SURVIVAL]="Spigot.jar"                                                                                 #Server Core .jar name to run off of. Good use if using custom .jar files.'
+        echo 'SERVER_CORE[$SURVIVAL]="Spigot-1.9.2.jar"                                                                               #Server Core .jar name to run off of. Good use if using custom .jar files separate from last Buildtools run.'
         echo 'SERVER_EXTRAS[$SURVIVAL]="none"                                                                                     #If none to place, place: "none". Ex: "rm /plugins/plugin/data.txt && command two;"'
-        echo 'START_ARGS[$SURVIVAL]="java -server -Xmx1024M -XX:+UseConcMarkSweepGC -jar"                    #Server starting arguments. Best only to change the -Xmx for memory use and server.jar at the end.' #Removed max perm size, no longer needed since MC 1.8
+        echo 'START_ARGS[$SURVIVAL]="java -server -Xmx1024M -XX:+UseConcMarkSweepGC -jar"                                         #Server starting arguments. Best only to change the -Xmx for memory use and server.jar at the end.' #Removed max perm size, no longer needed since MC 1.8
         echo 'SHUTDOWN_CMD[$SURVIVAL]="stop"                                                                                      #Command used to tell the server, nicely, to shut down via screen/console.'
         echo 'MSG_CMD[$SURVIVAL]="say"                                                                                            #Command used to announce the SHUTDOWN_MSG1 and 2 prior to shutdown. Used for announced countdown.'
         echo 'SHUTDOWN_MAX_WAIT[$SURVIVAL]=30                                                                                     #How long to wait until server is shut down completely, before continueing on with the script. If server is down before the set number, the script exits.'
@@ -251,7 +252,8 @@ update_spigot(){
     else
         cd "$SERVER_SETTINGS/buildtools" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS}/buildtools from " pwd "!${NOCOLOR}\n" && exit; }
         if [ "$1" == "clean" ] ; then
-            echo -e -n "\n${LIGHTGREEN}Cleaning Up in: ${NOCOLOR}"
+            echo " "
+            echo -e -n "${LIGHTGREEN}Cleaning Up in: ${NOCOLOR}"
             pwd;
             command "find . | grep -v 'buildtools.sh' | xargs rm -rf"
         fi
@@ -272,7 +274,7 @@ update_spigot(){
         echo -e "\n${LIGHTGREEN}Downloading ${GREEN}BuildTools.jar${LIGHTGREEN}...${NOCOLOR}"
         curl "${BUILDTOOLS_URL}" -o "BuildTools.jar"
         echo -e "\n${LIGHTGREEN}Running ${GREEN}Buildtools.jar${NOCOLOR}\n"
-        HOME=$USER_DIRECTORY java -jar "BuildTools.jar" --rev 1.9
+        HOME=$USER_DIRECTORY java -jar "BuildTools.jar" ${BUILDTOOLS_BUILD_VERSION}
         #${BUILDTOOL_BUILD_VERSION}
         echo -e "\n${LIGHTGREEN}Copying${GREEN} ${BUILDTOOLS_SPIGOT} ${LIGHTGREEN}to${GREEN} $SERVER_SETTINGS ${LIGHTGREEN}as${GREEN} ${BUILDTOOLS_OUTPUT}${LIGHTGREEN}.${NOCOLOR}"
         if [ -f "${BUILDTOOLS_SPIGOT}" ] ; then
@@ -431,7 +433,7 @@ yes_or_no(){
                 };;
         esac
     done
-    echo " "
+    echo -e "\n"
 }
 server_exist(){
     if [ "$SERVER_NAME[$1]" = "" ] ; then
@@ -445,60 +447,6 @@ not_a_number(){
     echo -e "\n${LIGHTGREEN}Server ID ${RED}Must Be A Number!${NOCOLOR}"
 }
 
-create_serverscfg(){
-    echo -e "\n${RED}ERROR! ${GREEN}${SERVER_SETTINGS}/servers.cfg ${RED}Not Found!${NOCOLOR}"
-    echo -e "${YELLOW}Creating Default Template..."
-    cd "$SERVER_SETTINGS" ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
-    {
-        echo '# Server Settings servers.cfg'
-        echo ' '
-        echo 'BUNGEECORD_URL="http://ci.md-5.net/job/BungeeCord/lastBuild/artifact/bootstrap/target/BungeeCord.jar"               #Newest Builds of Bungeecord.jar. Type "none" if you do not wish to download this.'
-        echo 'BUNGEECORD="BungeeCord.jar"                                                                                         #Choice name of saved and displayed .jar'
-        echo 'BUILDTOOLS_URL="https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar" #Newest Builds of Buildtools. Type "none" if you do not wish to download this.'
-        echo 'BUILDTOOLS_SPIGOT="spigot-1.8.8.jar"                                                                                #Make sure this is the exact name of the spigot file output from BuildTools.jar.'
-        echo 'BUILDTOOLS_OUTPUT="Spigot.jar"                                                                                      #Choice name of buildtools.jar output to be renamed to when copied out of buildtools.'
-        echo 'SPIGOT_LATEST="Spigot.jar"                                                                                          #Choice name of saved and displayed .jar'
-        echo 'MINECRAFT_SERVER_URL="https://s3.amazonaws.com/Minecraft.Download/versions/1.8.8/minecraft_server.1.8.8.jar"        #Choice version of minecraft_server.jar. Update URL when Mojang releases newer versions.  Type "none" if you do not wish to download this.'
-        echo 'MINECRAFT_SERVER="Minecraft_Server.jar"                                                                             #Choice name of saved and displayed .jar'
-        echo 'MINECRAFT_SNAPSHOT_URL="none"                                                                                       #Choice version of minecraft__snapshot_server.jar. Update URL to your choice. Can be used for custom versions of MC/Forge/Sponge/etc.  Type "none" if you do not wish to download this.'
-        echo 'MINECRAFT_SNAPSHOT="Minecraft_Snapshot_Server.jar"                                                                  #Choice name of saved and displayed .jar'
-        echo ' '
-        echo 'SHOW_SCREENS="True"                                                                                                 #Do you want to show the screen listings after server Start, Stop, and Restarts?'
-        echo ' '
-        echo '# Survival Server Settings'
-        echo 'SURVIVAL=0                                                                                                          #Server Group Unique Name. Must be different than other server groups. Increment the ID# for each additional server listing. Best if you keep these in order.'
-        echo 'SERVER_ENABLED[$SURVIVAL]="true"                                                                                    #Is this server allowed to start? If Yes, "true", otherwise "false."'
-        echo 'SERVER_NAME[$SURVIVAL]="Survival"                                                                                   #Server Group Display/Screen Name. Can be anything.'
-        echo 'SERVER_PATH[$SURVIVAL]="Survival"                                                                                   #Server root directory where the server_core.jar will be saved and executed? Directory must be in same location as this config.'
-        echo 'SERVER_CORE[$SURVIVAL]="Spigot.jar"                                                                                 #Server Core .jar name to run off of. Good use if using custom .jar files.'
-        echo 'SERVER_EXTRAS[$SURVIVAL]="none"                                                                                     #If none to place, place: "none". Ex: "rm /plugins/plugin/data.txt && command two;"'
-        echo 'START_ARGS[$SURVIVAL]="java -server -Xmx1024M -XX:+UseConcMarkSweepGC -jar"                    #Server starting arguments. Best only to change the -Xmx for memory use and server.jar at the end.' #Removed max perm size, no longer needed since MC 1.8
-        echo 'SHUTDOWN_CMD[$SURVIVAL]="stop"                                                                                      #Command used to tell the server, nicely, to shut down via screen/console.'
-        echo 'MSG_CMD[$SURVIVAL]="say"                                                                                            #Command used to announce the SHUTDOWN_MSG1 and 2 prior to shutdown. Used for announced countdown.'
-        echo 'SHUTDOWN_MAX_WAIT[$SURVIVAL]=30                                                                                     #How long to wait until server is shut down completely, before continueing on with the script. If server is down before the set number, the script exits.'
-        echo 'SHUTDOWN_SECONDS[$SURVIVAL]=20                                                                                      #Number of seconds until MSG_CMD is used to shut down. Each second repeates the shutdown_msgs as the countdown decreases.'
-        echo 'SHUTDOWN_MSG1[$SURVIVAL]="&KD&rShutting down in "                                                                   #First half of the shutdown message, followed by the number of seconds remaining.'
-        echo 'SHUTDOWN_MSG2[$SURVIVAL]=" Seconds&KD&r."                                                                           #Second half of the shutdown message, after the number of seconds remaining.'
-        echo ' '
-        echo '# BungeeCord Server Settings'
-        echo 'BUNGEE=1'
-        echo 'SERVER_ENABLED[$BUNGEE]=true'
-        echo 'SERVER_NAME[$BUNGEE]="BungeeCord"'
-        echo 'SERVER_PATH[$BUNGEE]="BungeeCord"'
-        echo 'SERVER_CORE[$BUNGEE]="BungeeCord.jar"'
-        echo 'SERVER_EXTRAS[$BUNGEE]="none"'
-        echo 'START_ARGS[$BUNGEE]="java -server -Xmx200M -XX:+UseConcMarkSweepGC -jar -DIReallyKnowWhatIaAmDoingISwear"'
-        echo 'SHUTDOWN_CMD[$BUNGEE]="end"'
-        echo 'MSG_CMD[$BUNGEE]="alert"'
-        echo 'SHUTDOWN_MAX_WAIT[$BUNGEE]=30'
-        echo 'SHUTDOWN_SECONDS[$BUNGEE]=5'
-        echo 'SHUTDOWN_MSG1[$BUNGEE]="Shutting down in "'
-        echo 'SHUTDOWN_MSG2[$BUNGEE]=" Seconds."'
-    } >> servers.cfg
-
-    sleep 1
-    echo -e "${LIGHTGREEN}Config ${GREEN}servers.cfg${LIGHTGREEN} created in ${GREEN}$SERVFER_SETTIGNS${LIGHTGREEN}.${NOCOLOR}"
-}
 commandsyml_template(){
     echo -e "\n${YELLOW}Creating commands.yml Template in ${SERVER_SETTINGS}/commandsTEMPLATE.yml${NOCOLOR}"
     if [ -f "$SERVER_SETTINGS/commandsTEMPLATE.yml" ] ; then
@@ -909,75 +857,148 @@ case "$1" in
         if [[ "$2" =~ ^[0-9]+$ ]] ; then
             if server_exist "$2" ; then
                 if is_running "$2" ; then
-                    if [ "$3" == "kill"  ] ; then
-                        command "screen -XS ${SERVER_NAME[$2]} kill"
-                        echo -e "${GREEN}${SERVER_NAME[$2]} ${LIGHTGREEN}Has Been ${YELLOW}Killed${NOCOLOR}"
-                    else
+                    case "$3" in
+                    kill|Kill) {
+                        if [ "$4" != "Y" ] && [ "$4" != "y" ] ; then
+                            echo -e "\n${RED}Are you sure you want to kill &{YELLOW}${SERVER_NAME[$2]}${RED}?${NOCOLOR}"
+                            yes_or_no yn
+                            echo " "
+                        else
+                            yn=Y
+                        fi
+                        yes_or_no yn
+                        case "$yn" in
+                            Y)  { 
+                                    command "screen -XS ${SERVER_NAME[$2]} kill"
+                                    echo -e "${GREEN}${SERVER_NAME[$2]} ${LIGHTGREEN}Has Been ${YELLOW}Killed${NOCOLOR}"
+                                };;
+                            N) { echo -e "\n${GREEN}${SERVER_NAME[$2]} ${LIGHTGREEN} Will live another millisecond.${NOCOLOR}" #I really need to find something else to say here...
+                                };;
+                        esac
+                    };;
+                    send|Send) {
+                        if [ "$4" != "" ] ; then
+                            {
+                                                                     #"-X eval 'stuff \"save-all\"\015'"
+                                command "screen -rx ${SERVER_NAME[$2]} -X eval 'stuff \"${*:4}\"\015'"
+                                echo -e "${LIGHTGREEN}  Command Sent to server.${NOCOLOR}"
+                            }
+                        else
+                            {
+                             echo -e "\n${LIGHTGREEN}Input any command and text after ${YELLOW}SEND${LIGHTGREEN} to send a command to select server screen.${NOCOLOR}"
+                             echo -e "${LIGHTGREEN}     Example: ${YELLOW}mcservers screen 1 send say Hello World!${NOCOLOR}"
+                             #echo -e "${LIGHTGREEN}     Note the quotation marks are used for two or more words after &${YELLOW}send${NOCOLOR}"
+                             echo -e "\n${LIGHTGREEN}Tip: Wanting to send a message to all servers, such as ${YELLOW}Say ${LIGHTGREEN}or${YELLOW} Broadcast${LIGHTGREEN},${NOCOLOR}"
+                             echo -e "${LIGHTGREEN}AND you are using Bungee, may I suggest sending an ${YELLOW}Alert${LIGHTGREEN} message to that server?${NOCOLOR}"
+                            }
+                        fi
+                    };;
+                    "") {
                         echo -e "\n${YELLOW}CAUTION! ${LIGHTGREEN}To Exit Screen: Hold ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}A${LIGHTGREEN}, let go and hit ${YELLOW}D${LIGHTGREEN}.${NOCOLOR}"
                         read -s -n1 exist
                         command "screen -x ${SERVER_NAME[$2]}"
                         echo " "
-                    fi
+                    };;
+                    *|help){
+                        echo -e "${LIGHTGREEN}   |   ${YELLOW} ID#${LIGHTGREEN}   |   ${YELLOW} Kill${LIGHTGREEN}   |   ${YELLOW} Send${LIGHTGREEN}   |${NOCOLOR}"
+                    };;
+                    esac
                 else
                     echo -e "\n${LIGHTGREEN}Server ${GREEN}$2 ${SERVER_NAME[$2]}${LIGHTGREEN}: ${RED}Offline.${NOCOLOR}"
                 fi
             else
-                exit
+                echo -e "\n${YELLOW}Server Choice Does Not Exit In servers.cfg!"
             fi
         else
             not_a_number
         fi
     };;
     backup){ 
-        if [ "$2" == "clean" ] ; then
+        if [ ${MANUAL_BACKUPS_LOCATION} == "none" ] ; then
             {
-            if [[ "$3" =~ ^[0-9]+$ ]] ; then
-                echo -e "Clean out backups older than $3 days?${NOCOLOR}"
-                yes_or_no yn
-                case "$yn" in
-                    Y) { find "${SERVER_SETTINGS}"/ManualBackups* -mtime +"$3" -exec rm {} \;
-                        };;
-                    N) { echo -e "\n${LIGHTGREEN}Backup Cleaning Discontinued.${NOCOLOR}"
-                        };;
-                esac
-            else
-                echo -e "\n${LIGHTGREEN}Backup Clean setup will clean out backups older than User Choice days.${NOCOLOR}"
-            fi
-            }
+            echo -e "${LIGHTGREEN}Backup Function Disabled Until MANUAL_BACKUPS_LOCATION is set with a directory.${NOCOLOR}"
+        }
         else
             {
-            if [[ "$2" =~ ^[0-9]+$ ]] ; then
-                if server_exist "$2" ; then
-                    if is_running "$2" ; then
-                        echo -e "\n${YELLOW}CAUTION! ${LIGHTGREEN}Not Advised to manually backup a server while it's running!${NOCOLOR}"
+                case "$2" in
+                Clean|clean) {
+                    if [[ "$3" =~ ^[0-9]+$ ]] ; then
+                        echo -e "\n${LIGHTGREEN}Checking directory size of ${SERVER_NAME[$2]}... ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}C ${LIGHTGREEN}To Cancel.${NOCOLOR}"
+                        command "du -hs ${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$2]}"
+                        if [ "$3" != "Y" ] && [ "$3" != "y" ] ; then
+                            echo -e "\n${LIGHTGREEN}Clean out backups older than $3 days?${NOCOLOR}"
+                            yes_or_no yn
+                            echo " "
+                        else
+                            yn=Y
+                        fi
+                        yes_or_no yn
+                        case "$yn" in
+                            Y) { find "${MANUAL_BACKUPS_LOCATION}"* -mtime +"$3" -exec rm {} \;
+                                };;
+                            N) { echo -e "\n${LIGHTGREEN}Backup Cleaning Discontinued.${NOCOLOR}"
+                                };;
+                        esac
                     else
-                        echo -e "\n${LIGHTGREEN}Server ${GREEN}$2 ${SERVER_NAME[$2]}${LIGHTGREEN}: ${RED}Offline.${NOCOLOR}"
+                        echo -e "\n${LIGHTGREEN}Backup Clean setup will clean out backups older than User Choice days.${NOCOLOR}"
                     fi
-                    echo -e "\n${LIGHTGREEN}Checking directory size of ${SERVER_NAME[$2]}... ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}C ${LIGHTGREEN}To Cancel.${NOCOLOR}"
-                    command "du -hs ${SERVER_SETTINGS}/${SERVER_PATH[$2]}"
-                    echo -e "\n${LIGHTGREEN}The size of ${GREEN}${SERVER_SETTINGS}/ManualBackups${LIGHTGREEN} is...${NOCOLOR}"
-                    command "du -hs ${SERVER_SETTINGS}/ManualBackups"
-                    echo -e -n "\n${LIGHTGREEN}Do you wish to backup the WHOLE directory/server?${NOCOLOR} "
-                    yes_or_no yn
-                    echo " "
-                    case "$yn" in
-                        Y){
-                            echo -e "${LIGHTGREEN}Backing up ${GREEN}${SERVER_NAME[$2]}${LIGHTGREEN}. . .${NOCOLOR}"
-                            env GZIP=-9 tar czf "${SERVER_SETTINGS}/ManualBackups/${SERVER_PATH[$2]}-$(date +%d-%m-%Y--%H-%M).tar.gz" "${SERVER_SETTINGS}/${SERVER_PATH[$2]}"
-                            echo -e "${LIGHTGREEN}DONE!${NOCOLOR}"
-                            echo -e "\n${LIGHTGREEN}The size of ${GREEN}${SERVER_SETTINGS}/ManualBackups${LIGHTGREEN} is...${NOCOLOR}"
-                            command "du -hs ${SERVER_SETTINGS}/ManualBackups"
-                            };;
-                        N){
-                            echo -e "${LIGHTGREEN}Backup Cancelled for ${GREEN}${SERVER_NAME[$2]}${LIGHTGREEN}.${NOCOLOR}"
-                            };;
-                    esac
-                else
-                    exit
-                fi
-            else
-                not_a_number
-            fi
+                };;
+                List|list) {
+                    echo -e "\n${LIGHTGREEN}Listing Backups in ${GREEN}${MANUAL_BACKUPS_LOCATION}${LIGHTGREEN}...${NOCOLOR}"
+                    command "ls -lh -F ${MANUAL_BACKUPS_LOCATION}"
+                };;
+                *|help) {
+                    {
+                        if [[ "$2" =~ ^[0-9]+$ ]] ; then
+                            if server_exist "$2" ; then
+                                if is_running "$2" ; then
+                                    echo -e "\n${YELLOW}CAUTION! ${LIGHTGREEN}Not Advised to manually backup a server while it's running!${NOCOLOR}"
+                                else
+                                    echo -e "\n${LIGHTGREEN}Server ${GREEN}$2 ${SERVER_NAME[$2]}${LIGHTGREEN}: ${RED}Offline.${NOCOLOR}"
+                                fi
+                                echo -e "\n${LIGHTGREEN}Checking directory size of ${SERVER_NAME[$2]}... ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}C ${LIGHTGREEN}To Cancel.${NOCOLOR}"
+                                command "du -hs ${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$2]}"
+                                echo -e "\n${LIGHTGREEN}The size of ${GREEN}${MANUAL_BACKUPS_LOCATION}${LIGHTGREEN} is...${NOCOLOR}"
+                                command "du -hs ${MANUAL_BACKUPS_LOCATION}"
+                                if [ "$3" != "Y" ] && [ "$3" != "y" ] ; then
+                                    echo -e -n "\n${LIGHTGREEN}Do you wish to backup the WHOLE directory/server?${NOCOLOR} "
+                                    yes_or_no yn
+                                    echo " "
+                                else
+                                    yn=Y
+                                fi
+                                case "$yn" in
+                                    Y){
+                                        echo -e "${LIGHTGREEN}Backing up ${GREEN}${SERVER_NAME[$2]}${LIGHTGREEN}. . .${NOCOLOR}"
+                                        if is_running "$2" ; then 
+                                            command "screen -rx ${SERVER_NAME[$2]} -X eval 'stuff \"${MSG_CMD[$1]} Saving Disabled. Backing Up!\"\015'"
+                                            command "screen -rx ${SERVER_NAME[$2]} -X eval 'stuff \"save-all\"\015'"
+                                            command "screen -rx ${SERVER_NAME[$2]} -X eval 'stuff \"save-off\"\015'"
+                                        fi
+                                        env GZIP=-9 tar czf "${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$2]}-$(date +%d-%m-%Y--%H-%M).tar.gz" "${SERVER_SETTINGS}/${SERVER_PATH[$2]}"
+                                        if is_running "$2" ; then 
+                                            command "screen -rx ${SERVER_NAME[$2]} -X eval 'stuff \"${MSG_CMD[$1]} Server Saving Enabled. Backing Complete!\"\015'"
+                                            command "screen -rx ${SERVER_NAME[$2]} -X eval 'stuff \"save-on\"\015'"
+                                        fi
+                                        echo -e "${LIGHTGREEN}DONE!${NOCOLOR}"
+                                        echo -e "\n${LIGHTGREEN}The size of ${MANUAL_BACKUPS_LOCATION}${LIGHTGREEN} is...${NOCOLOR}"
+                                        command "du -hs ${MANUAL_BACKUPS_LOCATION}"
+                                        };;
+                                    N){
+                                        echo -e "${LIGHTGREEN}Backup Cancelled for ${GREEN}${SERVER_NAME[$2]}${LIGHTGREEN}.${NOCOLOR}"
+                                        };;
+                                esac
+                            else
+                                exit
+                            fi
+                        else
+                            #not_a_number
+                            echo -e "\n${LIGHTGREEN}Choices:${NOCOLOR}"
+                            echo -e "${LIGHTGREEN}   |   ${YELLOW} ID#${LIGHTGREEN}   |   ${YELLOW} Clean${LIGHTGREEN}   |   ${YELLOW} List${LIGHTGREEN}   |${NOCOLOR}"
+                        fi
+                    }
+                };;
+                esac
             }
         fi
     };;
@@ -1111,7 +1132,7 @@ case "$1" in
                                 echo -e "${LIGHTGREEN}Please start/create ${GREEN}${SERVER_NAME[$3]} ${LIGHTGREEN}first.${NOCOLOR}"
                             fi
                         else
-                            exit
+                            echo -e "\n${YELLOW}Server Choice Does Not Exit In servers.cfg!"
                         fi
                     else
                         not_a_number
@@ -1310,24 +1331,29 @@ case "$1" in
     help|*) {
             echo -e "\n${LIGHTGREEN}Below Effect All Servers Listed In ${GREEN}$SERVER_SETTINGS/servers.cfg${LIGHTGREEN}.${NOCOLOR}"
             echo -e "\n${LIGHTGREEN} Server +"
-            echo -e "   ${LIGHTGREEN} Status (ID#)${NOCOLOR}         - ${LIGHTGREEN}Status and ID# of all servers.${NOCOLOR}"
-            echo -e "   ${LIGHTGREEN} Start ID#/All${NOCOLOR}        - ${LIGHTGREEN}Start select server.${NOCOLOR}"             #Hidden note: If mcservers server start all skip, script will skip the user answer to create missing server_path directories that are missing.
-            echo -e "   ${LIGHTGREEN} Stop ID#/All${NOCOLOR}         - ${LIGHTGREEN}Stop select server.${NOCOLOR}"
-            echo -e "   ${LIGHTGREEN} Restart ID#/All${NOCOLOR}      - ${LIGHTGREEN}Restart select server.${NOCOLOR}"           #Hidden note: If mcservers server start all skip, script will skip the user answer to create missing server_path directories that are missing.
-            echo -e "\n${LIGHTGREEN} Update +${NOCOLOR}                 - ${LIGHTGREEN}Update to latest releases.${NOCOLOR}"
-            echo -e "   ${LIGHTGREEN} Spigot${NOCOLOR}               - ${LIGHTGREEN}Update Spigot.jar to Latest Build.${NOCOLOR}"
-            echo -e "   ${LIGHTGREEN} Minecraft${NOCOLOR}            - ${LIGHTGREEN}Download Minecraft_Server.jar.${NOCOLOR}"
-            echo -e "   ${LIGHTGREEN} Snapshot${NOCOLOR}             - ${LIGHTGREEN}Download Snapshot.jar.${NOCOLOR}"
-            echo -e "   ${LIGHTGREEN} Bungeecord${NOCOLOR}           - ${LIGHTGREEN}Download latest Bungeecord.jar.${NOCOLOR}"
-            echo -e "   ${LIGHTGREEN} All${NOCOLOR}                  - ${LIGHTGREEN}Update all of the above.${NOCOLOR}"
-            echo -e "\n${LIGHTGREEN} Screen ID#${NOCOLOR}              - ${LIGHTGREEN}View screen of Server ID.${NOCOLOR}"
-            echo -e "\n${LIGHTGREEN} Configuration Management"
-            echo -e "   ${LIGHTGREEN} Create${NOCOLOR}               - ${LIGHTGREEN}Create Template Files for MC Servers.${NOCOLOR}"
-            echo -e "   ${LIGHTGREEN} Edit${NOCOLOR}                 - ${LIGHTGREEN}View/Edit Template or Server ID files.${NOCOLOR}"
-            echo -e "   ${LIGHTGREEN} Overwrite${NOCOLOR}            - ${LIGHTGREEN}Overwrite Server's file with Template file.${NOCOLOR}"
-            echo -e "\n${LIGHTGREEN} Backup ID#${NOCOLOR}              - ${LIGHTGREEN}Backup WHOLE Server ID, or clean out old backups.${NOCOLOR}"
-            echo -e "   ${LIGHTGREEN} Clean Days#${NOCOLOR}          - ${LIGHTGREEN}Clean out backups exceeding # Days Old.${NOCOLOR}"
-            echo -e "\n${LIGHTGREEN} Help${NOCOLOR}                    - ${LIGHTGREEN}What you see before you now...${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} Status (ID#)${NOCOLOR}     - ${LIGHTGREEN}Status and ID# of all servers.${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} Start ID#/All${NOCOLOR}    - ${LIGHTGREEN}Start select server.${NOCOLOR}"             #Hidden note: If mcservers server start all skip, script will skip the user answer to create missing server_path directories that are missing.
+            echo -e "   ${LIGHTGREEN} Stop ID#/All${NOCOLOR}     - ${LIGHTGREEN}Stop select server.${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} Restart ID#/All${NOCOLOR}  - ${LIGHTGREEN}Restart select server.${NOCOLOR}"           #Hidden note: If mcservers server start all skip, script will skip the user answer to create missing server_path directories that are missing.
+            echo -e "\n${LIGHTGREEN} Update +${NOCOLOR}            - ${LIGHTGREEN}Update to latest releases.${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} Spigot${NOCOLOR}           - ${LIGHTGREEN}Update Spigot.jar to Latest Build.${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} Minecraft${NOCOLOR}        - ${LIGHTGREEN}Download Minecraft_Server.jar.${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} Snapshot${NOCOLOR}         - ${LIGHTGREEN}Download Snapshot.jar.${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} Bungeecord${NOCOLOR}       - ${LIGHTGREEN}Download latest Bungeecord.jar.${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} All${NOCOLOR}              - ${LIGHTGREEN}Update all of the above.${NOCOLOR}"
+            echo -e "\n${LIGHTGREEN} Screen ID#+${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} (NOTHING)${NOCOLOR}        - ${LIGHTGREEN}View screen of Server ID.${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} Kill${NOCOLOR}             - ${LIGHTGREEN}Kill Server Of Choice. CAUTION!${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} Send${NOCOLOR}             - ${LIGHTGREEN}Sends following text to server screen.${NOCOLOR}"
+            echo -e "\n${LIGHTGREEN} Configuration Management${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} Create${NOCOLOR}           - ${LIGHTGREEN}Create Template Files for MC Servers.${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} Edit${NOCOLOR}             - ${LIGHTGREEN}View/Edit Template or Server ID files.${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} Overwrite${NOCOLOR}        - ${LIGHTGREEN}Overwrite Server's file with Template file.${NOCOLOR}"
+            echo -e " \n${LIGHTGREEN} Backup +${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} ID#${NOCOLOR}              - ${LIGHTGREEN}Backup WHOLE Server ID. Add Y skips question.${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} Clean Days#${NOCOLOR}      - ${LIGHTGREEN}Clean out backups older than #Days. Add Y skips question.${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} List${NOCOLOR}             - ${LIGHTGREEN}Lists all backups residing in backup directory${NOCOLOR}"
+            echo -e "\n${LIGHTGREEN} Help${NOCOLOR}                - ${LIGHTGREEN}What you see before you now...${NOCOLOR}"
             echo -e "\n${LIGHTGREEN}Use of these commands are as follows:${YELLOW} service mcservers server status 1${NOCOLOR}"
           };;
 esac
