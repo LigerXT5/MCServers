@@ -51,10 +51,10 @@ echo -e "\n${RED}ERROR! ${GREEN}${SERVER_SETTINGS}/servers.cfg ${RED}Not Found!$
         echo 'BUNGEECORD="BungeeCord.jar"                                                                                         #Choice name of saved and displayed .jar'
         echo 'BUILDTOOLS_URL="https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar" #Newest Builds of Buildtools. Type "none" if you do not wish to download this.'
         echo 'BUILDTOOLS_BUILD_VERSION="--rev latest"                                                                                #Leave blank for current release version of MC. If specific build wanted, add: --rev 1.8, --rev 1.8.8, --rev latest.'
-        echo 'BUILDTOOLS_SPIGOT="spigot-1.9.2.jar"                                                                                  #Make sure this is the exact name of the spigot file output from BuildTools.jar.'
-        echo 'BUILDTOOLS_OUTPUT="Spigot-1.9.2.jar"                                                                                    #Choice name of buildtools.jar output to be renamed to when copied out of buildtools.'
-        echo 'SPIGOT_LATEST="Spigot192.jar"                                                                                        #Choice name of saved and displayed .jar'
-        echo 'MINECRAFT_SERVER_URL="https://s3.amazonaws.com/Minecraft.Download/versions/1.9/minecraft_server.1.9.jar"            #Choice version of minecraft_server.jar. Update URL when Mojang releases newer versions.  Type "none" if you do not wish to download this.'
+        echo 'BUILDTOOLS_SPIGOT="spigot-1.11.2.jar"                                                                                  #Make sure this is the exact name of the spigot file output from BuildTools.jar.'
+        echo 'BUILDTOOLS_OUTPUT="Spigot.jar"                                                                                    #Choice name of buildtools.jar output to be renamed to when copied out of buildtools.'
+        echo 'SPIGOT_LATEST="Spigot.jar"                                                                                        #Choice name of saved and displayed .jar'
+        echo 'MINECRAFT_SERVER_URL="https://s3.amazonaws.com/Minecraft.Download/versions/1.11.2/minecraft_server.1.11.2.jar"            #Choice version of minecraft_server.jar. Update URL when Mojang releases newer versions.  Type "none" if you do not wish to download this.'
         echo 'MINECRAFT_SERVER="Minecraft_Server.jar"                                                                             #Choice name of saved and displayed .jar'
         echo 'MINECRAFT_SNAPSHOT_URL="none"                                                                                       #Choice version of minecraft__snapshot_server.jar. Update URL to your choice. Can be used for custom versions of MC/Forge/Sponge/etc.  Type "none" if you do not wish to download this.'
         echo 'MINECRAFT_SNAPSHOT="Minecraft_Snapshot_Server.jar"                                                                  #Choice name of saved and displayed .jar'
@@ -67,7 +67,7 @@ echo -e "\n${RED}ERROR! ${GREEN}${SERVER_SETTINGS}/servers.cfg ${RED}Not Found!$
         echo 'SERVER_ENABLED[$SURVIVAL]="true"                                                                                    #Is this server allowed to start? If Yes, "true", otherwise "false."'
         echo 'SERVER_NAME[$SURVIVAL]="Survival"                                                                                   #Server Group Display/Screen Name. Can be anything.'
         echo 'SERVER_PATH[$SURVIVAL]="Survival"                                                                                   #Server root directory where the server_core.jar will be saved and executed? Directory must be in same location as this config.'
-        echo 'SERVER_CORE[$SURVIVAL]="Spigot-1.9.2.jar"                                                                               #Server Core .jar name to run off of. Good use if using custom .jar files separate from last Buildtools run.'
+        echo 'SERVER_CORE[$SURVIVAL]="Spigot.jar"                                                                               #Server Core .jar name to run off of. Good use if using custom .jar files separate from last Buildtools run.'
         echo 'SERVER_EXTRAS[$SURVIVAL]="none"                                                                                     #If none to place, place: "none". Ex: "rm /plugins/plugin/data.txt && command two;"'
         echo 'START_ARGS[$SURVIVAL]="java -server -Xmx1024M -XX:+UseConcMarkSweepGC -jar"                                         #Server starting arguments. Best only to change the -Xmx for memory use and server.jar at the end.' #Removed max perm size, no longer needed since MC 1.8
         echo 'SHUTDOWN_CMD[$SURVIVAL]="stop"                                                                                      #Command used to tell the server, nicely, to shut down via screen/console.'
@@ -923,68 +923,92 @@ case "$1" in
                 case "$2" in
                 Clean|clean) {
                     if [[ "$3" =~ ^[0-9]+$ ]] ; then
-                        echo -e "\n${LIGHTGREEN}Checking directory size of ${SERVER_NAME[$2]}... ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}C ${LIGHTGREEN}To Cancel.${NOCOLOR}"
-                        command "du -hs ${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$2]}"
-                        if [ "$3" != "Y" ] && [ "$3" != "y" ] ; then
-                            echo -e "\n${LIGHTGREEN}Clean out backups older than $3 days?${NOCOLOR}"
-                            yes_or_no yn
-                            echo " "
+                        if [[ "$4" =~ ^[0-9]+$ ]] ; then
+                            echo -e "\n${LIGHTGREEN}Checking directory size of ${YELLOW}${SERVER_NAME[$3]}${LIGHTGREEN}... ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}C ${LIGHTGREEN}To Cancel.${NOCOLOR}"
+                            command "du -hs ${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$3]}"
+                            echo -e "\n${LIGHTGREEN}Clean out backups older than ${YELLOW}$4 days${LIGHTGREEN}?${NOCOLOR}"
+                            if [[ "$5" = [YyNn] ]] ; then
+                                yn="$5"
+                            else {					
+                                yes_or_no yn
+                                }
+                            fi
+                            case "$yn" in
+                                y|Y) { find "${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$3]}"* -mtime +"$4" -exec rm {} \;
+                                        echo -e "${LIGHTGREEN}DONE!${NOCOLOR}"
+                                        echo -e "\n${LIGHTGREEN}The size of ${GREEN}${SERVER_NAME[$3]}${LIGHTGREEN}... ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}C ${LIGHTGREEN}To Cancel.${NOCOLOR}"
+                                        command "du -hs ${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$3]}"
+                                        echo -e "\n${LIGHTGREEN}The total size of ${GREEN}${MANUAL_BACKUPS_LOCATION}${LIGHTGREEN} is...${NOCOLOR}"
+                                        command "du -hs ${MANUAL_BACKUPS_LOCATION}"
+                                    };;
+                                n|N) { echo -e "\n${LIGHTGREEN}Backup Cleaning Discontinued.${NOCOLOR}"
+                                    };;
+                            esac
                         else
-                            yn=Y
+                            echo -e "\n${LIGHTGREEN}Please Specify ${YELLOW}Days Old${LIGHTGREEN} To Clean Out.${NOCOLOR}"
+                            echo -e "${LIGHTGREEN}Example: ${YELLOW}service mcservers backup clean 0 5${NOCOLOR}"
+                            echo -e "${YELLOW}         0 ${LIGHTGREEN}= Server ID#, and ${YELLOW}5${LIGHTGREEN} = Days.${NOCOLOR}"
                         fi
-                        yes_or_no yn
-                        case "$yn" in
-                            Y) { find "${MANUAL_BACKUPS_LOCATION}"* -mtime +"$3" -exec rm {} \;
-                                };;
-                            N) { echo -e "\n${LIGHTGREEN}Backup Cleaning Discontinued.${NOCOLOR}"
-                                };;
-                        esac
                     else
-                        echo -e "\n${LIGHTGREEN}Backup Clean setup will clean out backups older than User Choice days.${NOCOLOR}"
+                        echo -e "\n${LIGHTGREEN}Please Specify ${YELLOW}Server ID#${LIGHTGREEN} To Clean Out.${NOCOLOR}"
+                        echo -e "${LIGHTGREEN}Example: ${YELLOW}service mcservers backup clean 0 5${NOCOLOR}"
+                        echo -e "${YELLOW}         0 ${LIGHTGREEN}= Server ID#, and ${YELLOW}5${LIGHTGREEN} = Days.${NOCOLOR}"
                     fi
                 };;
                 List|list) {
-                    echo -e "\n${LIGHTGREEN}Listing Backups in ${GREEN}${MANUAL_BACKUPS_LOCATION}${LIGHTGREEN}...${NOCOLOR}"
-                    command "ls -lh -F ${MANUAL_BACKUPS_LOCATION}"
+                    if [[ "$3" =~ ^[0-9]+$ ]] ; then
+                        echo -e "\n${LIGHTGREEN}Listing Backups in ${GREEN}${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$3]}${LIGHTGREEN}...${NOCOLOR}"
+                        command "mkdir -p \"${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$3]}\""
+                        command "ls -lh -F ${MANUAL_BACKUPS_LOCATION}/${SERVER_NAME[$3]}" 
+                    else
+                        echo -e "\n${LIGHTGREEN}Listing Backups in ${GREEN}${MANUAL_BACKUPS_LOCATION}${LIGHTGREEN}...${NOCOLOR}"
+                        command "mkdir -p \"${MANUAL_BACKUPS_LOCATION}\""
+                        command "ls -lh -F ${MANUAL_BACKUPS_LOCATION}"
+                        echo " "
+                        echo -e "${LIGHTGREEN}Input Server ID# after ${YELLOW}LIST${LIGHTGREEN} for respective server's backups.${NOCOLOR}"
+                    fi
                 };;
                 *|help) {
                     {
                         if [[ "$2" =~ ^[0-9]+$ ]] ; then
                             if server_exist "$2" ; then
                                 if is_running "$2" ; then
-                                    echo -e "\n${YELLOW}CAUTION! ${LIGHTGREEN}Not Advised to manually backup a server while it's running!${NOCOLOR}"
+                                    echo -e "\n${YELLOW}CAUTION${RED}! ${LIGHTGREEN}Not Advised to manually backup a server while it's ${YELLOW}running${RED}!${NOCOLOR}"
                                 else
                                     echo -e "\n${LIGHTGREEN}Server ${GREEN}$2 ${SERVER_NAME[$2]}${LIGHTGREEN}: ${RED}Offline.${NOCOLOR}"
                                 fi
-                                echo -e "\n${LIGHTGREEN}Checking directory size of ${SERVER_NAME[$2]}... ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}C ${LIGHTGREEN}To Cancel.${NOCOLOR}"
+                                echo -e "\n${LIGHTGREEN}Checking directory size of ${GREEN}${SERVER_NAME[$2]}${LIGHTGREEN}... ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}C ${LIGHTGREEN}To Cancel.${NOCOLOR}"
+                                command "mkdir -p \"${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$2]}\""
                                 command "du -hs ${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$2]}"
-                                echo -e "\n${LIGHTGREEN}The size of ${GREEN}${MANUAL_BACKUPS_LOCATION}${LIGHTGREEN} is...${NOCOLOR}"
+                                echo -e "\n${LIGHTGREEN}The total size of ${GREEN}${MANUAL_BACKUPS_LOCATION}${LIGHTGREEN} is...${NOCOLOR}"
                                 command "du -hs ${MANUAL_BACKUPS_LOCATION}"
-                                if [ "$3" != "Y" ] && [ "$3" != "y" ] ; then
-                                    echo -e -n "\n${LIGHTGREEN}Do you wish to backup the WHOLE directory/server?${NOCOLOR} "
-                                    yes_or_no yn
-                                    echo " "
-                                else
-                                    yn=Y
+                                echo -e -n "\n${LIGHTGREEN}Do you wish to backup the WHOLE directory/server of ${GREEN}${SERVER_PATH[$2]}${LIGHTGREEN}?${NOCOLOR} "
+                                if [[ "$3" = [YyNn] ]] ; then
+                                        yn="$3"
+                                    else {					
+                                        yes_or_no yn
+                                    }
                                 fi
                                 case "$yn" in
-                                    Y){
+                                    y|Y){
                                         echo -e "${LIGHTGREEN}Backing up ${GREEN}${SERVER_NAME[$2]}${LIGHTGREEN}. . .${NOCOLOR}"
                                         if is_running "$2" ; then 
                                             command "screen -rx ${SERVER_NAME[$2]} -X eval 'stuff \"${MSG_CMD[$1]} Saving Disabled. Backing Up!\"\015'"
                                             command "screen -rx ${SERVER_NAME[$2]} -X eval 'stuff \"save-all\"\015'"
                                             command "screen -rx ${SERVER_NAME[$2]} -X eval 'stuff \"save-off\"\015'"
                                         fi
-                                        env GZIP=-9 tar czf "${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$2]}-$(date +%d-%m-%Y--%H-%M).tar.gz" "${SERVER_SETTINGS}/${SERVER_PATH[$2]}"
+                                        env GZIP=-9 tar czf "${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$2]}/${SERVER_PATH[$2]}-$(date +%d-%m-%Y--%H-%M).tar.gz" "${SERVER_SETTINGS}/${SERVER_PATH[$2]}"
                                         if is_running "$2" ; then 
                                             command "screen -rx ${SERVER_NAME[$2]} -X eval 'stuff \"${MSG_CMD[$1]} Server Saving Enabled. Backing Complete!\"\015'"
                                             command "screen -rx ${SERVER_NAME[$2]} -X eval 'stuff \"save-on\"\015'"
                                         fi
                                         echo -e "${LIGHTGREEN}DONE!${NOCOLOR}"
-                                        echo -e "\n${LIGHTGREEN}The size of ${MANUAL_BACKUPS_LOCATION}${LIGHTGREEN} is...${NOCOLOR}"
+                                        echo -e "\n${LIGHTGREEN}The size of ${GREEN}${SERVER_NAME[$2]}${LIGHTGREEN}... ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}C ${LIGHTGREEN}To Cancel.${NOCOLOR}"
+                                        command "du -hs ${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$2]}"
+                                        echo -e "\n${LIGHTGREEN}The total size of ${GREEN}${MANUAL_BACKUPS_LOCATION}${LIGHTGREEN} is...${NOCOLOR}"
                                         command "du -hs ${MANUAL_BACKUPS_LOCATION}"
                                         };;
-                                    N){
+                                    n|N){
                                         echo -e "${LIGHTGREEN}Backup Cancelled for ${GREEN}${SERVER_NAME[$2]}${LIGHTGREEN}.${NOCOLOR}"
                                         };;
                                 esac
@@ -1248,64 +1272,89 @@ case "$1" in
         case "$2" in
             spigot) { 
                     echo -e "\n${LIGHTGREEN}Do you want to update your server ${GREEN}${BUILDTOOLS_SPIGOT}${LIGHTGREEN} file?${NOCOLOR}"
-                    yes_or_no yn
+			        if [[ "$3" = [YyNn] ]] ; then
+					    yn="$3"
+					else {					
+					    yes_or_no yn
+                    }
+                    fi
                     echo " "
                     case "$yn" in
-                        Y){
+                        y|Y){
                             if [ "$3" == "clean" ] ; then
                                 update_spigot "clean"
                             else
                                 update_spigot "noclean"
                             fi
                             };;
-                        N){ echo -e "${GREEN}${BUILDTOOLS_SPIGOT} ${LIGHTGREEN}Unchanged.${NOCOLOR}"
+                        n|N){ echo -e "${GREEN}${BUILDTOOLS_SPIGOT} ${LIGHTGREEN}Unchanged.${NOCOLOR}"
                             echo " "
                             };;
                     esac
                     };;
             minecraft|vanilla) { 
                     echo -e "\n${LIGHTGREEN}Do you want to update your server ${GREEN}${MINECRAFT_SERVER}${LIGHTGREEN} file?${NOCOLOR}"
-                    yes_or_no yn
+                    if [[ "$3" = [YyNn] ]] ; then
+					    yn="$3"
+					else {					
+					    yes_or_no yn
+                    }
+                    fi
                     echo " "
                     case "$yn" in
-                        Y){
+                        y|Y){
                             update_minecraft
                             };;
-                        N){ echo -e "${GREEN}${MINECRAFT_SERVER} ${LIGHTGREEN}Unchanged.${NOCOLOR}"
+                        n|N){ echo -e "${GREEN}${MINECRAFT_SERVER} ${LIGHTGREEN}Unchanged.${NOCOLOR}"
                             };;
                     esac
                     };;
             snapshot) { 
                     echo -e "\n${LIGHTGREEN}Do you want to update your server ${GREEN}${MINECRAFT_SNAPSHOT}${LIGHTGREEN} file?${NOCOLOR}"
-                    yes_or_no yn
+                    if [[ "$3" = [YyNn] ]] ; then
+					    yn="$3"
+					else {					
+					    yes_or_no yn
+                    }
+                    fi
                     echo " "
                     case "$yn" in
-                        Y){
+                        y|Y){
                             update_snapshot
                             };;
-                        N){ echo -e "${GREEN}${MINECRAFT_SNAPSHOT} ${LIGHTGREEN}Unchanged.${NOCOLOR}"
+                        n|N){ echo -e "${GREEN}${MINECRAFT_SNAPSHOT} ${LIGHTGREEN}Unchanged.${NOCOLOR}"
                             };;
                         esac
                     };;
             bungee|bungeecord) { 
                     echo -e "\n${LIGHTGREEN}Do you want to update your ${GREEN}${BUNGEECORD} ${LIGHTGREEN}file?${NOCOLOR}"
-                    yes_or_no yn
+                    if [[ "$3" = [YyNn] ]] ; then
+					    yn="$3"
+					else {					
+					    yes_or_no yn
+                    }
+                    fi
                     echo " "
                     case "$yn" in
-                        Y) { echo -e "${LIGHTGREEN}Updating to latest ${GREEN}${BUNGEECORD} ${LIGHTGREEN}Build...${NOCOLOR}"
+                        y|Y) { echo -e "${LIGHTGREEN}Updating to latest ${GREEN}${BUNGEECORD} ${LIGHTGREEN}Build...${NOCOLOR}"
                                 update_bungee
                             };;
-                        N){ echo -e "${GREEN}${BUNGEECORD} ${LIGHTGREEN}Unchanged.${NOCOLOR}"
+                        n|N){ echo -e "${GREEN}${BUNGEECORD} ${LIGHTGREEN}Unchanged.${NOCOLOR}"
                             };;
                     esac
                     };;
             all) { 
                     echo -e "\n${LIGHTGREEN}Do you want to update ${YELLOW}ALL ${LIGHTGREEN}files?${NOCOLOR}"
                     echo -e "     ${RED}All URLs Should Be Updated in $SERVER_SETTINGS/servers.cfg${NOCOLOR}\n"
-                    yes_or_no yn
+                    if [[ "$3" = [YyNn] ]] ; then
+					    "$3"  yn
+					else {					
+					    yes_or_no yn
+                    }
+                    fi
                     case "$yn" in
-                        Y) { echo -e "${LIGHTGREEN}Updating All Files to latest Builds...${NOCOLOR}"
-                            if [ "$3" == "clean" ] ; then
+                        y|Y) { echo -e "${LIGHTGREEN}Updating All Files to latest Builds...${NOCOLOR}"
+                            if [ "$3" == "clean" ] || [ "$4" == "clean" ] ; then
                                 update_spigot "clean"
                             else
                                 update_spigot "noclean"
@@ -1314,7 +1363,7 @@ case "$1" in
                             update_snapshot
                             update_bungee
                             };;
-                        N){  echo -e "${LIGHTGREEN}No Files Unchanged.${NOCOLOR}"
+                        n|N){  echo -e "${LIGHTGREEN}No Files Unchanged.${NOCOLOR}"
                             };;
                     esac
                     };;
@@ -1351,9 +1400,10 @@ case "$1" in
             echo -e "   ${LIGHTGREEN} Overwrite${NOCOLOR}        - ${LIGHTGREEN}Overwrite Server's file with Template file.${NOCOLOR}"
             echo -e " \n${LIGHTGREEN} Backup +${NOCOLOR}"
             echo -e "   ${LIGHTGREEN} ID#${NOCOLOR}              - ${LIGHTGREEN}Backup WHOLE Server ID. Add Y skips question.${NOCOLOR}"
-            echo -e "   ${LIGHTGREEN} Clean Days#${NOCOLOR}      - ${LIGHTGREEN}Clean out backups older than #Days. Add Y skips question.${NOCOLOR}"
-            echo -e "   ${LIGHTGREEN} List${NOCOLOR}             - ${LIGHTGREEN}Lists all backups residing in backup directory${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} Clean ID# Days#${NOCOLOR}  - ${LIGHTGREEN}Clean out backups older than #Days. Add Y skips question.${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} List ID#${NOCOLOR}         - ${LIGHTGREEN}Lists all backups residing in backup directory${NOCOLOR}"
             echo -e "\n${LIGHTGREEN} Help${NOCOLOR}                - ${LIGHTGREEN}What you see before you now...${NOCOLOR}"
+            echo -e "${LIGHTGREEN}Version: ${GREEN}1.18 Jan 3, 2016${NOCOLOR}"
             echo -e "\n${LIGHTGREEN}Use of these commands are as follows:${YELLOW} service mcservers server status 1${NOCOLOR}"
           };;
 esac
