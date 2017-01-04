@@ -45,52 +45,67 @@ echo -e "\n${RED}ERROR! ${GREEN}${SERVER_SETTINGS}/servers.cfg ${RED}Not Found!$
     echo -e "${YELLOW}Creating Default Template...${NOCOLOR}" 
     cd "$SERVER_SETTINGS" ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
     {
-        echo '# Server Settings servers.cfg'
-        echo ' '
-        echo 'BUNGEECORD_URL="http://ci.md-5.net/job/BungeeCord/lastBuild/artifact/bootstrap/target/BungeeCord.jar"               #Newest Builds of Bungeecord.jar. Type "none" if you do not wish to download this.'
-        echo 'BUNGEECORD="BungeeCord.jar"                                                                                         #Choice name of saved and displayed .jar'
-        echo 'BUILDTOOLS_URL="https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar" #Newest Builds of Buildtools. Type "none" if you do not wish to download this.'
-        echo 'BUILDTOOLS_BUILD_VERSION="--rev latest"                                                                                #Leave blank for current release version of MC. If specific build wanted, add: --rev 1.8, --rev 1.8.8, --rev latest.'
-        echo 'BUILDTOOLS_SPIGOT="spigot-1.11.2.jar"                                                                                  #Make sure this is the exact name of the spigot file output from BuildTools.jar.'
-        echo 'BUILDTOOLS_OUTPUT="Spigot.jar"                                                                                    #Choice name of buildtools.jar output to be renamed to when copied out of buildtools.'
-        echo 'SPIGOT_LATEST="Spigot.jar"                                                                                        #Choice name of saved and displayed .jar'
-        echo 'MINECRAFT_SERVER_URL="https://s3.amazonaws.com/Minecraft.Download/versions/1.11.2/minecraft_server.1.11.2.jar"            #Choice version of minecraft_server.jar. Update URL when Mojang releases newer versions.  Type "none" if you do not wish to download this.'
-        echo 'MINECRAFT_SERVER="Minecraft_Server.jar"                                                                             #Choice name of saved and displayed .jar'
-        echo 'MINECRAFT_SNAPSHOT_URL="none"                                                                                       #Choice version of minecraft__snapshot_server.jar. Update URL to your choice. Can be used for custom versions of MC/Forge/Sponge/etc.  Type "none" if you do not wish to download this.'
-        echo 'MINECRAFT_SNAPSHOT="Minecraft_Snapshot_Server.jar"                                                                  #Choice name of saved and displayed .jar'
-        echo 'MANUAL_BACKUPS_LOCATION="none"                                                                                      #Choice of where backups are saved. Default: none = Disables Backup until directory is set.'
-        echo ' '
-        echo 'SHOW_SCREENS="True"                                                                                                 #Do you want to show the screen listings after server Start, Stop, and Restarts?'
-        echo ' '
-        echo '# Survival Server Settings'
-        echo 'SURVIVAL=0                                                                                                          #Server Group Unique Name. Must be different than other server groups. Increment the ID# for each additional server listing. Best if you keep these in order.'
-        echo 'SERVER_ENABLED[$SURVIVAL]="true"                                                                                    #Is this server allowed to start? If Yes, "true", otherwise "false."'
-        echo 'SERVER_NAME[$SURVIVAL]="Survival"                                                                                   #Server Group Display/Screen Name. Can be anything.'
-        echo 'SERVER_PATH[$SURVIVAL]="Survival"                                                                                   #Server root directory where the server_core.jar will be saved and executed? Directory must be in same location as this config.'
-        echo 'SERVER_CORE[$SURVIVAL]="Spigot.jar"                                                                               #Server Core .jar name to run off of. Good use if using custom .jar files separate from last Buildtools run.'
-        echo 'SERVER_EXTRAS[$SURVIVAL]="none"                                                                                     #If none to place, place: "none". Ex: "rm /plugins/plugin/data.txt && command two;"'
-        echo 'START_ARGS[$SURVIVAL]="java -server -Xmx1024M -XX:+UseConcMarkSweepGC -jar"                                         #Server starting arguments. Best only to change the -Xmx for memory use and server.jar at the end.' #Removed max perm size, no longer needed since MC 1.8
-        echo 'SHUTDOWN_CMD[$SURVIVAL]="stop"                                                                                      #Command used to tell the server, nicely, to shut down via screen/console.'
-        echo 'MSG_CMD[$SURVIVAL]="say"                                                                                            #Command used to announce the SHUTDOWN_MSG1 and 2 prior to shutdown. Used for announced countdown.'
-        echo 'SHUTDOWN_MAX_WAIT[$SURVIVAL]=30                                                                                     #How long to wait until server is shut down completely, before continueing on with the script. If server is down before the set number, the script exits.'
-        echo 'SHUTDOWN_SECONDS[$SURVIVAL]=20                                                                                      #Number of seconds until MSG_CMD is used to shut down. Each second repeates the shutdown_msgs as the countdown decreases.'
-        echo 'SHUTDOWN_MSG1[$SURVIVAL]="&KD&rShutting down in "                                                                   #First half of the shutdown message, followed by the number of seconds remaining.'
-        echo 'SHUTDOWN_MSG2[$SURVIVAL]=" Seconds&KD&r."                                                                           #Second half of the shutdown message, after the number of seconds remaining.'
-        echo ' '
-        echo '# BungeeCord Server Settings'
-        echo 'BUNGEE=1'
-        echo 'SERVER_ENABLED[$BUNGEE]=true'
-        echo 'SERVER_NAME[$BUNGEE]="BungeeCord"'
-        echo 'SERVER_PATH[$BUNGEE]="BungeeCord"'
-        echo 'SERVER_CORE[$BUNGEE]="BungeeCord.jar"'
-        echo 'SERVER_EXTRAS[$BUNGEE]="none"'
-        echo 'START_ARGS[$BUNGEE]="java -server -Xmx200M -XX:+UseConcMarkSweepGC -jar -DIReallyKnowWhatIaAmDoingISwear"'
-        echo 'SHUTDOWN_CMD[$BUNGEE]="end"'
-        echo 'MSG_CMD[$BUNGEE]="alert"'
-        echo 'SHUTDOWN_MAX_WAIT[$BUNGEE]=30'
-        echo 'SHUTDOWN_SECONDS[$BUNGEE]=5'
-        echo 'SHUTDOWN_MSG1[$BUNGEE]="Shutting down in "'
-        echo 'SHUTDOWN_MSG2[$BUNGEE]=" Seconds."'
+        echo "# Server Settings servers.cfg"
+        echo " "
+        echo "BUNGEECORD_URL=\"http://ci.md-5.net/job/BungeeCord/lastBuild/artifact/bootstrap/target/BungeeCord.jar\"               #Newest Builds of Bungeecord.jar. Type \"none\" if you do not wish to download this."
+        echo "BUNGEECORD=\"BungeeCord.jar\"                                                                                         #Choice name of saved and displayed .jar"
+        echo "BUILDTOOLS_URL=\"https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar\" #Newest Builds of Buildtools. Type \"none\" if you do not wish to download this."
+        echo "BUILDTOOLS_BUILD_VERSION=\"--rev latest\"                                                                             #Leave blank for current release version of MC. If specific build wanted, add: --rev 1.8, --rev 1.8.8, --rev latest."
+        echo "BUILDTOOLS_SPIGOT=\"spigot-1.11.2.jar\"                                                                               #Make sure this is the exact name of the spigot file output from BuildTools.jar."
+        echo "BUILDTOOLS_OUTPUT=\"Spigot.jar\"                                                                                      #Choice name of buildtools.jar output to be renamed to when copied out of buildtools."
+        echo "SPIGOT_LATEST=\"Spigot.jar\"                                                                                          #Choice name of saved and displayed .jar"
+        echo "MINECRAFT_SERVER_URL=\"https://s3.amazonaws.com/Minecraft.Download/versions/1.11.2/minecraft_server.1.11.2.jar\"      #Choice version of minecraft_server.jar. Update URL when Mojang releases newer versions.  Type \"none\" if you do not wish to download this."
+        echo "MINECRAFT_SERVER=\"Minecraft_Server.jar\"                                                                             #Choice name of saved and displayed .jar"
+        echo "MINECRAFT_SNAPSHOT_URL=\"none\"                                                                                       #Choice version of minecraft__snapshot_server.jar. Update URL to your choice. Can be used for custom versions of MC/Forge/Sponge/etc.  Type \"none\" if you do not wish to download this."
+        echo "MINECRAFT_SNAPSHOT=\"Minecraft_Snapshot_Server.jar\"                                                                  #Choice name of saved and displayed .jar"
+        echo "MANUAL_BACKUPS_LOCATION=\"none\"                                                                                      #Choice of where backups are saved. Default: none = Disables Backup until directory is set."
+        echo " "
+        echo "SHOW_SCREENS=\"True\"                                                                                                   #Do you want to show the screen listings after server Start, Stop, and Restarts?"
+        echo " "
+        echo "## Survival Server Settings"
+        echo "#EXAMPLESURVIVAL=0                                                                                                         #Server Group Unique Name. Must be different than other server groups. Increment the ID# for each additional server listing. Best if you keep these in order."
+        echo "#SERVER_ENABLED[$EXAMPLESURVIVAL]=\"true\"                                                                                   #Is this server allowed to start? If Yes, \"true\", otherwise \"false.\" By Command Request: \"manual\" then service mcservers server start ID# OVERRIDE. Note: OVERRIDE must be capitalized!"
+        echo "#SERVER_NAME[$EXAMPLESURVIVAL]=\"Survival\"                                                                                  #Server Group Display/Screen Name. Can be anything."
+        echo "#SERVER_PATH[$EXAMPLESURVIVAL]=\"Survival\"                                                                                  #Server root directory where the server_core.jar will be saved and executed? Directory must be in same location as this config."
+        echo "#SERVER_CORE[$EXAMPLESURVIVAL]=\"Spigot.jar\"                                                                                #Server Core .jar name to run off of. Good use if using custom .jar files separate from last Buildtools run."
+        echo "#SERVER_EXTRAS[EXAMPLE$SURVIVAL]=\"none\"                                                                                    #If none to place, place: \"none\". Ex: \"rm /plugins/plugin/data.txt && command two\""
+        echo "#START_ARGS[$EXAMPLESURVIVAL]=\"java -server -Xmx1024M -XX:+UseConcMarkSweepGC -jar\"                                        #Server starting arguments. Best only to change the -Xmx for memory use and server.jar at the end." #Removed max perm size, no longer needed since MC 1.8
+        echo "#SHUTDOWN_CMD[$EXAMPLESURVIVAL]=\"stop\"                                                                                     #Command used to tell the server, nicely, to shut down via screen/console."
+        echo "#MSG_CMD[$EXAMPLESURVIVAL]=\"say\"                                                                                           #Command used to announce the SHUTDOWN_MSG1 and 2 prior to shutdown. Used for announced countdown."
+        echo "#SHUTDOWN_MAX_WAIT[$EXAMPLESURVIVAL]=30                                                                                    #How long to wait until server is shut down completely, before continueing on with the script. If server is down before the set number, the script exits."
+        echo "#SHUTDOWN_SECONDS[$EXAMPLESURVIVAL]=20                                                                                     #Number of seconds until MSG_CMD is used to shut down. Each second repeates the shutdown_msgs as the countdown decreases."
+        echo "#SHUTDOWN_MSG1[$EXAMPLESURVIVAL]=\"&KD&rShutting down in \"                                                                  #First half of the shutdown message, followed by the number of seconds remaining."
+        echo "#SHUTDOWN_MSG2[$EXAMPLESURVIVAL]=\" Seconds&KD&r.\"                                                                          #Second half of the shutdown message, after the number of seconds remaining."
+        echo " "
+        echo "# BungeeCord Server Settings"
+        echo "BUNGEE=0"
+        echo "SERVER_ENABLED[$BUNGEE]=false"
+        echo "SERVER_NAME[$BUNGEE]=\"BungeeCord\""
+        echo "SERVER_PATH[$BUNGEE]=\"BungeeCord\""
+        echo "SERVER_CORE[$BUNGEE]=\"BungeeCord.jar\""
+        echo "SERVER_EXTRAS[$BUNGEE]=\"none\""
+        echo "START_ARGS[$BUNGEE]=\"java -server -Xmx200M -XX:+UseConcMarkSweepGC -jar -DIReallyKnowWhatIaAmDoingISwear\""
+        echo "SHUTDOWN_CMD[$BUNGEE]=\"end\""
+        echo "MSG_CMD[$BUNGEE]=\"alert\""
+        echo "SHUTDOWN_MAX_WAIT[$BUNGEE]=30"
+        echo "SHUTDOWN_SECONDS[$BUNGEE]=5"
+        echo "SHUTDOWN_MSG1[$BUNGEE]=\"Bungee shutting down in \""
+        echo "SHUTDOWN_MSG2[$BUNGEE]=\" Seconds.\""
+        echo " "
+        echo "# Spigot Survival Server Settings"
+        echo "SURVIVAL=0"
+        echo "SERVER_ENABLED[$SURVIVAL]=true"
+        echo "SERVER_NAME[$SURVIVAL]=\"Survival\""
+        echo "SERVER_PATH[$SURVIVAL]=\"Survival\""
+        echo "SERVER_CORE[$SURVIVAL]=\"Spigot.jar\""
+        echo "SERVER_EXTRAS[$SURVIVAL]=\"none\""
+        echo "START_ARGS[$SURVIVAL]=\"java -server -Xmx1024M -XX:+UseConcMarkSweepGC -jar\""
+        echo "SHUTDOWN_CMD[$SURVIVAL]=\"stop\""
+        echo "MSG_CMD[$SURVIVAL]=\"say\""
+        echo "SHUTDOWN_MAX_WAIT[$SURVIVAL]=30"
+        echo "SHUTDOWN_SECONDS[$SURVIVAL]=5"
+        echo "SHUTDOWN_MSG1[$SURVIVAL]=\"Survival shutting down in \""
+        echo "SHUTDOWN_MSG2[$SURVIVAL]=\" Seconds.\""
     } >> servers.cfg
 
     sleep 1
@@ -468,62 +483,62 @@ commandsyml_template(){
     case "$yn" in
         Y)  { cd "$SERVER_SETTINGS" ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
                 {
-                    echo '# This is the commands configuration file for Bukkit.'
-                    echo '# For documentation on how to make use of this file, check out the Bukkit Wiki at'
-                    echo '# http://wiki.bukkit.org/Commands.yml'
-                    echo '# '
-                    echo '# If you need help on this file, feel free to join us on irc or leave a message'
-                    echo '# on the forums asking for advice.'
-                    echo '# '
-                    echo '# IRC: #spigot @ irc.spi.gt'
-                    echo '#    (If this means nothing to you, just go to http://www.spigotmc.org/pages/irc/ )'
-                    echo '# Forums: http://www.spigotmc.org/'
-                    echo '# Bug tracker: http://www.spigotmc.org/go/bugs'
-                    echo ' '
-                    echo 'command-block-overrides: {} # Remove the {} if enabling/adding anything in the listing below it.'
-                    echo '#- summon'
-                    echo '#- tellraw'
-                    echo '#- setblock'
-                    echo '#- tp'
-                    echo '#- give'
-                    echo '#- clear'
-                    echo '#- scoreboard'
-                    echo '#- clone'
-                    echo '#- execute'
-                    echo '#- fill'
-                    echo '#- kill'
-                    echo '#- particle'
-                    echo '#- replaceitem'
-                    echo '#- setblock'
-                    echo '#- spawnpoint'
-                    echo '#- spreadplayers'
-                    echo '#- stats'
-                    echo '#- summon'
-                    echo '#- testfor'
-                    echo '#- testforblock'
-                    echo '#- testforblocks'
-                    echo '#- time'
-                    echo '#- trigger'
-                    echo '#- weather'
-                    echo '#- xp'
-                    echo '#- blockdata'
-                    echo '#- effect'
-                    echo '#- enchant'
-                    echo '#- entitydata'
-                    echo '#- gamerule'
-                    echo '#- particle'
-                    echo '#- playsound'
-                    echo 'aliases: {} # Remove the {} if enabling/adding anything in the listing below it.'
-                    echo '#  w:'
-                    echo '#  - mywarp $1-'
-                    echo '#  warp:'
-                    echo '#  - mywarp $1-'
-                    echo '#  warps:'
-                    echo '#  - mywarp list $1-'
-                    echo '#  setwarp:'
-                    echo '#  - mywarp create $1-'
-                    echo '#  delwarp:'
-                    echo '#  - mywarp delete $1-'
+                    echo "# This is the commands configuration file for Bukkit."
+                    echo "# For documentation on how to make use of this file, check out the Bukkit Wiki at"
+                    echo "# http://wiki.bukkit.org/Commands.yml"
+                    echo "# "
+                    echo "# If you need help on this file, feel free to join us on irc or leave a message"
+                    echo "# on the forums asking for advice."
+                    echo "# "
+                    echo "# IRC: #spigot @ irc.spi.gt"
+                    echo "#    (If this means nothing to you, just go to http://www.spigotmc.org/pages/irc/ )"
+                    echo "# Forums: http://www.spigotmc.org/"
+                    echo "# Bug tracker: http://www.spigotmc.org/go/bugs"
+                    echo " "
+                    echo "command-block-overrides: {} # Remove the {} if enabling/adding anything in the listing below it."
+                    echo "#- summon"
+                    echo "#- tellraw"
+                    echo "#- setblock"
+                    echo "#- tp"
+                    echo "#- give"
+                    echo "#- clear"
+                    echo "#- scoreboard"
+                    echo "#- clone"
+                    echo "#- execute"
+                    echo "#- fill"
+                    echo "#- kill"
+                    echo "#- particle"
+                    echo "#- replaceitem"
+                    echo "#- setblock"
+                    echo "#- spawnpoint"
+                    echo "#- spreadplayers"
+                    echo "#- stats"
+                    echo "#- summon"
+                    echo "#- testfor"
+                    echo "#- testforblock"
+                    echo "#- testforblocks"
+                    echo "#- time"
+                    echo "#- trigger"
+                    echo "#- weather"
+                    echo "#- xp"
+                    echo "#- blockdata"
+                    echo "#- effect"
+                    echo "#- enchant"
+                    echo "#- entitydata"
+                    echo "#- gamerule"
+                    echo "#- particle"
+                    echo "#- playsound"
+                    echo "aliases: {} # Remove the {} if enabling/adding anything in the listing below it."
+                    echo "#  w:"
+                    echo "#  - mywarp $1-"
+                    echo "#  warp:"
+                    echo "#  - mywarp $1-"
+                    echo "#  warps:"
+                    echo "#  - mywarp list $1-"
+                    echo "#  setwarp:"
+                    echo "#  - mywarp create $1-"
+                    echo "#  delwarp:"
+                    echo "#  - mywarp delete $1-"
                 } >> commandsTEMPLATE.yml
             echo -e "\n${LIGHTGREEN}Done!"
             };;
@@ -545,143 +560,143 @@ spigotyml_template(){
     case "$yn" in
         Y)  { cd "$SERVER_SETTINGS" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
                 {
-                    echo '# This is the main configuration file for Spigot.'
-                    echo '# As you can see, theres tons to configure. Some options may impact gameplay, so use'
-                    echo '# with caution, and make sure you know what each option does before configuring.'
-                    echo '# For a reference for any variable inside this file, check out the Spigot wiki at'
-                    echo '# http://www.spigotmc.org/wiki/spigot-configuration/'
-                    echo '# '
-                    echo '# If you need help with the configuration or have any questions related to Spigot,'
-                    echo '# join us at the IRC or drop by our forums and leave a post.'
-                    echo '# '
-                    echo '# IRC: #spigot @ irc.spi.gt ( http://www.spigotmc.org/pages/irc/ )'
-                    echo '# Forums: http://www.spigotmc.org/'
-                    echo ' '
-                    echo 'config-version: 8'
-                    echo 'settings:'
-                    echo '  save-user-cache-on-stop-only: false'
-                    echo '  bungeecord: false                    #Enable this if using BungeeCord'
-                    echo '  late-bind: true'
-                    echo '  sample-count: 12'
-                    echo '  player-shuffle: 1000'
-                    echo '  filter-creative-items: true'
-                    echo '  user-cache-size: 1000'
-                    echo '  int-cache-limit: 1024'
-                    echo '  moved-wrongly-threshold: 0.07'
-                    echo '  moved-too-quickly-threshold: 100.0'
-                    echo '  timeout-time: 60'
-                    echo '  restart-on-crash: true'
-                    echo '  restart-script: ./startserver.sh'
-                    echo '  netty-threads: 4'
-                    echo '  attribute:'
-                    echo '    maxHealth:'
-                    echo '      max: 2048.0'
-                    echo '    movementSpeed:'
-                    echo '      max: 2048.0'
-                    echo '    attackDamage:'
-                    echo '      max: 2048.0'
-                    echo '  debug: false'
-                    echo 'commands:'
-                    echo '  tab-complete: 2'
-                    echo '  log: true'
-                    echo '  spam-exclusions:'
-                    echo '  - /skill'
-                    echo '  silent-commandblock-console: true'
-                    echo '  replace-commands:'
-                    echo '  - setblock'
-                    echo '  - summon'
-                    echo '  - testforblock'
-                    echo '  - tellraw'
-                    echo '  #- give'
-                    echo '  #- clear'
-                    echo 'messages:'
-                    echo '  whitelist: [Bouncer]: We are sorry, but you are not...\n on THE list...'
-                    echo '  unknown-command: I am sorry, but I did not understand...'
-                    echo '  server-full: We cannot fit another warm body here...'
-                    echo '  outdated-client: Please update your client to {0}'
-                    echo '  outdated-server: You young wipper snappers and your upgrading...\n You are on {0}, we are not quite there yet!'
-                    echo '  restart: Please return in a moment.\nRebooting conciousness...'
-                    echo 'stats:'
-                    echo '  disable-saving: false'
-                    echo '  forced-stats:'
-                    echo '    achievement.openInventory: 1'
-                    echo 'global-api-cache: false'
-                    echo 'world-settings:'
-                    echo '  default:'
-                    echo '    verbose: false'
-                    echo '    growth:'
-                    echo '      cactus-modifier: 100'
-                    echo '      cane-modifier: 100'
-                    echo '      melon-modifier: 100'
-                    echo '      mushroom-modifier: 100'
-                    echo '      pumpkin-modifier: 100'
-                    echo '      sapling-modifier: 100'
-                    echo '      wheat-modifier: 100'
-                    echo '      netherwart-modifier: 100'
-                    echo '    entity-activation-range:'
-                    echo '      animals: 32'
-                    echo '      monsters: 32'
-                    echo '      misc: 16'
-                    echo '    entity-tracking-range:'
-                    echo '      players: 128'
-                    echo '      animals: 48'
-                    echo '      monsters: 48'
-                    echo '      misc: 32'
-                    echo '      other: 128'
-                    echo '    ticks-per:'
-                    echo '      hopper-transfer: 10'
-                    echo '    hopper-amount: 1'
-                    echo '    mob-spawn-range: 4'
-                    echo '    anti-xray:                 #anti-xray customized to not only hide ores, but detur world-download clients. Replaces all hidden blocks with random tnt and redstoneblocks. Big Boom!'
-                    echo '      enabled: true'
-                    echo '      engine-mode: 2'
-                    echo '      hide-blocks:'
-                    echo '      - 1'
-                    echo '      - 3'
-                    echo '      - 14'
-                    echo '      - 15'
-                    echo '      - 16'
-                    echo '      - 21'
-                    echo '      - 48'
-                    echo '      - 49'
-                    echo '      - 54'
-                    echo '      - 56'
-                    echo '      - 73'
-                    echo '      - 74'
-                    echo '      - 82'
-                    echo '      - 129'
-                    echo '      - 130'
-                    echo '      replace-blocks:'
-                    echo '      - 46'
-                    echo '      - 152'
-                    echo '    nerf-spawner-mobs: false'
-                    echo '    random-light-updates: true'
-                    echo '    save-structure-info: true'
-                    echo '    max-bulk-chunks: 12'
-                    echo '    max-entity-collisions: 6'
-                    echo '    dragon-death-sound-radius: 1000'
-                    echo '    hunger:'
-                    echo '      walk-exhaustion: 0.2'
-                    echo '      sprint-exhaustion: 0.8'
-                    echo '      combat-exhaustion: 0.3'
-                    echo '      regen-exhaustion: 3.0'
-                    echo '    max-tnt-per-tick: 4'
-                    echo '    max-tick-time:'
-                    echo '      tile: 20'
-                    echo '      entity: 25'
-                    echo '    item-despawn-rate: 18000'
-                    echo '    merge-radius:'
-                    echo '      item: 4.0'
-                    echo '      exp: 4.0'
-                    echo '    arrow-despawn-rate: 1800'
-                    echo '    enable-zombie-pigmen-portal-spawns: true'
-                    echo '    wither-spawn-sound-radius: 512'
-                    echo '    view-distance: 10'
-                    echo '    hanging-tick-frequency: 100'
-                    echo '    zombie-aggressive-towards-villager: true'
-                    echo '    chunks-per-tick: 100'
-                    echo '    clear-tick-list: true'
-                    echo '    hopper-alt-ticking: true'
+                    echo "# This is the main configuration file for Spigot."
+                    echo "# As you can see, theres tons to configure. Some options may impact gameplay, so use"
+                    echo "# with caution, and make sure you know what each option does before configuring."
+                    echo "# For a reference for any variable inside this file, check out the Spigot wiki at"
+                    echo "# http://www.spigotmc.org/wiki/spigot-configuration/"
+                    echo "# "
+                    echo "# If you need help with the configuration or have any questions related to Spigot,"
+                    echo "# join us at the IRC or drop by our forums and leave a post."
+                    echo "# "
+                    echo "# IRC: #spigot @ irc.spi.gt ( http://www.spigotmc.org/pages/irc/ )"
+                    echo "# Forums: http://www.spigotmc.org/"
+                    echo " "
+                    echo "config-version: 8"
+                    echo "settings:"
+                    echo "  save-user-cache-on-stop-only: false"
+                    echo "  bungeecord: false                    #Enable this if using BungeeCord"
+                    echo "  late-bind: true"
+                    echo "  sample-count: 12"
+                    echo "  player-shuffle: 1000"
+                    echo "  filter-creative-items: true"
+                    echo "  user-cache-size: 1000"
+                    echo "  int-cache-limit: 1024"
+                    echo "  moved-wrongly-threshold: 0.07"
+                    echo "  moved-too-quickly-threshold: 100.0"
+                    echo "  timeout-time: 60"
+                    echo "  restart-on-crash: true"
+                    echo "  restart-script: ./startserver.sh"
+                    echo "  netty-threads: 4"
+                    echo "  attribute:"
+                    echo "    maxHealth:"
+                    echo "      max: 2048.0"
+                    echo "    movementSpeed:"
+                    echo "      max: 2048.0"
+                    echo "    attackDamage:"
+                    echo "      max: 2048.0"
+                    echo "  debug: false"
+                    echo "commands:"
+                    echo "  tab-complete: 2"
+                    echo "  log: true"
+                    echo "  spam-exclusions:"
+                    echo "  - /skill"
+                    echo "  silent-commandblock-console: true"
+                    echo "  replace-commands:"
+                    echo "  - setblock"
+                    echo "  - summon"
+                    echo "  - testforblock"
+                    echo "  - tellraw"
+                    echo "  #- give"
+                    echo "  #- clear"
+                    echo "messages:"
+                    echo "  whitelist: [Bouncer]: We are sorry, but you are not...\n on THE list..."
+                    echo "  unknown-command: I am sorry, but I did not understand..."
+                    echo "  server-full: We cannot fit another warm body here..."
+                    echo "  outdated-client: Please update your client to {0}"
+                    echo "  outdated-server: You young wipper snappers and your upgrading...\n You are on {0}, we are not quite there yet!"
+                    echo "  restart: Please return in a moment.\nRebooting conciousness..."
+                    echo "stats:"
+                    echo "  disable-saving: false"
+                    echo "  forced-stats:"
+                    echo "    achievement.openInventory: 1"
+                    echo "global-api-cache: false"
+                    echo "world-settings:"
+                    echo "  default:"
+                    echo "    verbose: false"
+                    echo "    growth:"
+                    echo "      cactus-modifier: 100"
+                    echo "      cane-modifier: 100"
+                    echo "      melon-modifier: 100"
+                    echo "      mushroom-modifier: 100"
+                    echo "      pumpkin-modifier: 100"
+                    echo "      sapling-modifier: 100"
+                    echo "      wheat-modifier: 100"
+                    echo "      netherwart-modifier: 100"
+                    echo "    entity-activation-range:"
+                    echo "      animals: 32"
+                    echo "      monsters: 32"
+                    echo "      misc: 16"
+                    echo "    entity-tracking-range:"
+                    echo "      players: 128"
+                    echo "      animals: 48"
+                    echo "      monsters: 48"
+                    echo "      misc: 32"
+                    echo "      other: 128"
+                    echo "    ticks-per:"
+                    echo "      hopper-transfer: 10"
+                    echo "    hopper-amount: 1"
+                    echo "    mob-spawn-range: 4"
+                    echo "    anti-xray:                 #anti-xray customized to not only hide ores, but detur world-download clients. Replaces all hidden blocks with random tnt and redstoneblocks. Big Boom!"
+                    echo "      enabled: true"
+                    echo "      engine-mode: 2"
+                    echo "      hide-blocks:"
+                    echo "      - 1"
+                    echo "      - 3"
+                    echo "      - 14"
+                    echo "      - 15"
+                    echo "      - 16"
+                    echo "      - 21"
+                    echo "      - 48"
+                    echo "      - 49"
+                    echo "      - 54"
+                    echo "      - 56"
+                    echo "      - 73"
+                    echo "      - 74"
+                    echo "      - 82"
+                    echo "      - 129"
+                    echo "      - 130"
+                    echo "      replace-blocks:"
+                    echo "      - 46"
+                    echo "      - 152"
+                    echo "    nerf-spawner-mobs: false"
+                    echo "    random-light-updates: true"
+                    echo "    save-structure-info: true"
+                    echo "    max-bulk-chunks: 12"
+                    echo "    max-entity-collisions: 6"
+                    echo "    dragon-death-sound-radius: 1000"
+                    echo "    hunger:"
+                    echo "      walk-exhaustion: 0.2"
+                    echo "      sprint-exhaustion: 0.8"
+                    echo "      combat-exhaustion: 0.3"
+                    echo "      regen-exhaustion: 3.0"
+                    echo "    max-tnt-per-tick: 4"
+                    echo "    max-tick-time:"
+                    echo "      tile: 20"
+                    echo "      entity: 25"
+                    echo "    item-despawn-rate: 18000"
+                    echo "    merge-radius:"
+                    echo "      item: 4.0"
+                    echo "      exp: 4.0"
+                    echo "    arrow-despawn-rate: 1800"
+                    echo "    enable-zombie-pigmen-portal-spawns: true"
+                    echo "    wither-spawn-sound-radius: 512"
+                    echo "    view-distance: 10"
+                    echo "    hanging-tick-frequency: 100"
+                    echo "    zombie-aggressive-towards-villager: true"
+                    echo "    chunks-per-tick: 100"
+                    echo "    clear-tick-list: true"
+                    echo "    hopper-alt-ticking: true"
                 } >> spigotTEMPLATE.yml
             echo -e "\n${LIGHTGREEN}Done!"
             };;
@@ -703,7 +718,7 @@ spigotyml_template(){
 #    case "$yn" in
 #        Y)  { cd $SERVER_SETTINGS ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
 #                {
-#                    echo ''
+#                    echo ""
 #                } >> helpTEMPLATE.yml
 #            echo -e "\n${LIGHTGREEN}Done!"
 #            };;
@@ -725,53 +740,53 @@ bukkityml_template(){
     case "$yn" in
         Y)  { cd "$SERVER_SETTINGS" ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
                 {
-                    echo '# This is the main configuration file for Bukkit.'
-                    echo '# As you can see, theres actually not that much to configure without any plugins.'
-                    echo '# For a reference for any variable inside this file, check out the Bukkit Wiki at'
-                    echo '# http://wiki.bukkit.org/Bukkit.yml'
-                    echo '# '
-                    echo '# If you need help on this file, feel free to join us on irc or leave a message'
-                    echo '# on the forums asking for advice.'
-                    echo '# '
-                    echo '# IRC: #spigot @ irc.spi.gt'
-                    echo '#    (If this means nothing to you, just go to http://www.spigotmc.org/pages/irc/ )'
-                    echo '# Forums: http://www.spigotmc.org/'
-                    echo '# Bug tracker: http://www.spigotmc.org/go/bugs'
-                    echo ' '
-                    echo ' '
-                    echo 'settings:'
-                    echo '  allow-end: true'
-                    echo '  warn-on-overload: true'
-                    echo '  permissions-file: permissions.yml'
-                    echo '  update-folder: UpdatePluginsOnNextServerStart'
-                    echo '  use-exact-login-location: true'
-                    echo '  world-container:'
-                    echo '  plugin-profiling: false'
-                    echo '  connection-throttle: 5000'
-                    echo '  query-plugins: true'
-                    echo '  deprecated-verbose: default'
-                    echo '  shutdown-message: Server going down for a bit. Please visit Site for information.'
-                    echo 'spawn-limits:'
-                    echo '  monsters: 75'
-                    echo '  animals: 45'
-                    echo '  water-animals: 25'
-                    echo '  ambient: 45'
-                    echo 'chunk-gc:'
-                    echo '  period-in-ticks: 600'
-                    echo '  load-threshold: 100'
-                    echo 'ticks-per:'
-                    echo '  animal-spawns: 400'
-                    echo '  monster-spawns: 10'
-                    echo '  autosave: 6000'
-                    echo 'database:'
-                    echo '  username: spigotserver314'
-                    echo '  isolation: SERIALIZABLE'
-                    echo '  driver: org.sqlite.JDBC'
-                    echo '  password: cookoo4tootwo'
-                    echo '  url: jdbc:sqlite:{DIR}{NAME}.db'
-                    echo '#worlds:'
-                    echo '#  world1:'
-                    echo '#  generator: CleanroomGenerator:10,stone,20,dirt,1,grass'
+                    echo "# This is the main configuration file for Bukkit."
+                    echo "# As you can see, theres actually not that much to configure without any plugins."
+                    echo "# For a reference for any variable inside this file, check out the Bukkit Wiki at"
+                    echo "# http://wiki.bukkit.org/Bukkit.yml"
+                    echo "# "
+                    echo "# If you need help on this file, feel free to join us on irc or leave a message"
+                    echo "# on the forums asking for advice."
+                    echo "# "
+                    echo "# IRC: #spigot @ irc.spi.gt"
+                    echo "#    (If this means nothing to you, just go to http://www.spigotmc.org/pages/irc/ )"
+                    echo "# Forums: http://www.spigotmc.org/"
+                    echo "# Bug tracker: http://www.spigotmc.org/go/bugs"
+                    echo " "
+                    echo " "
+                    echo "settings:"
+                    echo "  allow-end: true"
+                    echo "  warn-on-overload: true"
+                    echo "  permissions-file: permissions.yml"
+                    echo "  update-folder: UpdatePluginsOnNextServerStart"
+                    echo "  use-exact-login-location: true"
+                    echo "  world-container:"
+                    echo "  plugin-profiling: false"
+                    echo "  connection-throttle: 5000"
+                    echo "  query-plugins: true"
+                    echo "  deprecated-verbose: default"
+                    echo "  shutdown-message: Server going down for a bit. Please visit Site for information."
+                    echo "spawn-limits:"
+                    echo "  monsters: 75"
+                    echo "  animals: 45"
+                    echo "  water-animals: 25"
+                    echo "  ambient: 45"
+                    echo "chunk-gc:"
+                    echo "  period-in-ticks: 600"
+                    echo "  load-threshold: 100"
+                    echo "ticks-per:"
+                    echo "  animal-spawns: 400"
+                    echo "  monster-spawns: 10"
+                    echo "  autosave: 6000"
+                    echo "database:"
+                    echo "  username: spigotserver314"
+                    echo "  isolation: SERIALIZABLE"
+                    echo "  driver: org.sqlite.JDBC"
+                    echo "  password: cookoo4tootwo"
+                    echo "  url: jdbc:sqlite:{DIR}{NAME}.db"
+                    echo "#worlds:"
+                    echo "#  world1:"
+                    echo "#  generator: CleanroomGenerator:10,stone,20,dirt,1,grass"
                 } >> bukkitTEMPLATE.yml
             echo -e "\n${LIGHTGREEN}Done!"
             };;
@@ -793,49 +808,49 @@ serverproperties_template(){
     case "$yn" in
         Y)  { cd "$SERVER_SETTINGS" ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
                 {
-                    echo '#All variables listed are explained at: http://minecraft.gamepedia.com/Server.properties'
-                    echo '#Minecraft server properties'
-                    echo ' '
-                    echo 'generator-settings='
-                    echo 'op-permission-level=1                         #Setting to 1 for new server owners protection'
-                    echo 'allow-nether=true'
-                    echo 'resource-pack-hash='
-                    echo 'level-name=helloworld'
-                    echo 'enable-query=false'
-                    echo 'allow-flight=false'
-                    echo 'announce-player-achievements=false            #I personally find this annoying on servers. Default is true.'
-                    echo 'server-port=25565                             #Set this to a port other than 25565 is running BungeeCord!'
-                    echo 'max-world-size=29999984'
-                    echo 'level-type=DEFAULT'
-                    echo 'enable-rcon=false                             #For the love of god, keep this false!'
-                    echo 'rcon.password=asdf1238asd168                  #If rcon is enabled, CHANGE THIS to something UNIQUE, and HARD to GUESS!'
-                    echo 'rcon.port=25575                               #If rcon is enabled, CHANGE THIS to something UNIQUE, Unused, and HARD to GUESS!'
-                    echo 'level-seed='
-                    echo 'force-gamemode=true'
-                    echo 'server-ip='
-                    echo 'network-compression-threshold=256'
-                    echo 'max-build-height=256                          #Did you know there is no max limit for this setting? Just dont kill your server!'
-                    echo 'spawn-npcs=true'
-                    echo 'white-list=false'
-                    echo 'spawn-animals=true'
-                    echo 'snooper-enabled=true                          #Leave this to true if youd like to help Mojang improve. Send anonomous details of server stats to Mojang.'
-                    echo 'online-mode=true                              #Set this to false if running through BungeeCord!'
-                    echo 'resource-pack='
-                    echo 'pvp=true'
-                    echo 'difficulty=1'
-                    echo 'enable-command-block=true'
-                    echo 'gamemode=0'
-                    echo 'player-idle-timeout=30                        #30 minutes of inactivity will kick player.'
-                    echo 'max-players=10'
-                    echo 'max-tick-time=60000'
-                    echo 'spawn-monsters=true'
-                    echo 'spawn-animals=true'
-                    echo 'generate-structures=true'
-                    echo 'view-distance=7'
-                    echo 'motd=A Brand New Minecraft Server!'
-                    echo 'use-native-transport=true'
-                    echo 'spawn-protection=16                           #0 disables spawn protection, 1 protects a 3x3 area. Imagine the size of the default 16! No max size. Only OPs can edit in this protection. If no OPs in the OPs listing, this option is disabled.'
-                    echo 'hardcore=false'
+                    echo "#All variables listed are explained at: http://minecraft.gamepedia.com/Server.properties"
+                    echo "#Minecraft server properties"
+                    echo " "
+                    echo "generator-settings="
+                    echo "op-permission-level=1                         #Setting to 1 for new server owners protection"
+                    echo "allow-nether=true"
+                    echo "resource-pack-hash="
+                    echo "level-name=helloworld"
+                    echo "enable-query=false"
+                    echo "allow-flight=false"
+                    echo "announce-player-achievements=false            #I personally find this annoying on servers. Default is true."
+                    echo "server-port=25565                             #Set this to a port other than 25565 is running BungeeCord!"
+                    echo "max-world-size=29999984"
+                    echo "level-type=DEFAULT"
+                    echo "enable-rcon=false                             #For the love of god, keep this false!"
+                    echo "rcon.password=asdf1238asd168                  #If rcon is enabled, CHANGE THIS to something UNIQUE, and HARD to GUESS!"
+                    echo "rcon.port=25575                               #If rcon is enabled, CHANGE THIS to something UNIQUE, Unused, and HARD to GUESS!"
+                    echo "level-seed="
+                    echo "force-gamemode=true"
+                    echo "server-ip="
+                    echo "network-compression-threshold=256"
+                    echo "max-build-height=256                          #Did you know there is no max limit for this setting? Just dont kill your server!"
+                    echo "spawn-npcs=true"
+                    echo "white-list=false"
+                    echo "spawn-animals=true"
+                    echo "snooper-enabled=true                          #Leave this to true if youd like to help Mojang improve. Send anonomous details of server stats to Mojang."
+                    echo "online-mode=true                              #Set this to false if running through BungeeCord!"
+                    echo "resource-pack="
+                    echo "pvp=true"
+                    echo "difficulty=1"
+                    echo "enable-command-block=true"
+                    echo "gamemode=0"
+                    echo "player-idle-timeout=30                        #30 minutes of inactivity will kick player."
+                    echo "max-players=10"
+                    echo "max-tick-time=60000"
+                    echo "spawn-monsters=true"
+                    echo "spawn-animals=true"
+                    echo "generate-structures=true"
+                    echo "view-distance=7"
+                    echo "motd=A Brand New Minecraft Server!"
+                    echo "use-native-transport=true"
+                    echo "spawn-protection=16                           #0 disables spawn protection, 1 protects a 3x3 area. Imagine the size of the default 16! No max size. Only OPs can edit in this protection. If no OPs in the OPs listing, this option is disabled."
+                    echo "hardcore=false"
                 } >> serverTEMPLATE.properties
             echo -e "\n${LIGHTGREEN}Done!"
             };;
@@ -1410,7 +1425,7 @@ case "$1" in
             echo -e "   ${LIGHTGREEN} Clean ID# Days#${NOCOLOR}  - ${LIGHTGREEN}Clean out backups older than #Days. Add Y skips question.${NOCOLOR}"
             echo -e "   ${LIGHTGREEN} List ID#${NOCOLOR}         - ${LIGHTGREEN}Lists all backups residing in backup directory${NOCOLOR}"
             echo -e "\n${LIGHTGREEN} Help${NOCOLOR}                - ${LIGHTGREEN}What you see before you now...${NOCOLOR}"
-            echo -e "${LIGHTGREEN}Version: ${GREEN}1.18 Jan 3, 2016${NOCOLOR}"
+            echo -e "${LIGHTGREEN}Version: ${GREEN}1.19 Jan 3, 2016${NOCOLOR}"
             echo -e "\n${LIGHTGREEN}Use of these commands are as follows:${YELLOW} service mcservers server status 1${NOCOLOR}"
           };;
 esac
