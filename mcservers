@@ -135,7 +135,16 @@ start_servers() {
         if is_running "$1" ; then
             echo -e "   ${GREEN}Running!${NOCOLOR}" 
         else
-            if [ "${SERVER_ENABLED[$1]}" == true ] ; then
+            if [ "${SERVER_ENABLED[$1]}" == "true" ]; then
+                Server_Start='Y'
+            elif [ "${SERVER_ENABLED[$1]}" == "manual" ] ; then
+                if [ "$2" == "OVERRIDE" ] ; then
+                    Server_Start='Y'
+                fi
+            else
+                Server_Start='N'
+            fi
+            if [ "$Server_Start" == 'Y' ] ; then
                 while [ "$exist" == "false" ]; do
                     if [ -d "$SERVER_SETTINGS/${SERVER_PATH}" ] ; then
                         if [ "${SERVER_EXTRAS[$1]}" != none ] ; then
@@ -274,7 +283,7 @@ update_spigot(){
         echo -e "\n${LIGHTGREEN}Downloading ${GREEN}BuildTools.jar${LIGHTGREEN}...${NOCOLOR}"
         curl "${BUILDTOOLS_URL}" -o "BuildTools.jar"
         echo -e "\n${LIGHTGREEN}Running ${GREEN}Buildtools.jar${NOCOLOR}\n"
-        HOME=$USER_DIRECTORY java -jar "BuildTools.jar" ${BUILDTOOLS_BUILD_VERSION}
+        HOME=$USER_DIRECTORY java -jar "BuildTools.jar" "${BUILDTOOLS_BUILD_VERSION}"
         #${BUILDTOOL_BUILD_VERSION}
         echo -e "\n${LIGHTGREEN}Copying${GREEN} ${BUILDTOOLS_SPIGOT} ${LIGHTGREEN}to${GREEN} $SERVER_SETTINGS ${LIGHTGREEN}as${GREEN} ${BUILDTOOLS_OUTPUT}${LIGHTGREEN}.${NOCOLOR}"
         if [ -f "${BUILDTOOLS_SPIGOT}" ] ; then
@@ -446,7 +455,6 @@ server_exist(){
 not_a_number(){
     echo -e "\n${LIGHTGREEN}Server ID ${RED}Must Be A Number!${NOCOLOR}"
 }
-
 commandsyml_template(){
     echo -e "\n${YELLOW}Creating commands.yml Template in ${SERVER_SETTINGS}/commandsTEMPLATE.yml${NOCOLOR}"
     if [ -f "$SERVER_SETTINGS/commandsTEMPLATE.yml" ] ; then
@@ -682,7 +690,6 @@ spigotyml_template(){
         };;
     esac
 }
-
 #helpyml_template(){              #At this time, I have no information to go off of for a decent help setup. Leaving off script until then.
 #    echo -e "\n${YELLOW}Creating help.yml Template in ${SERVER_SETTINGS}/helpTEMPLATE.yml${NOCOLOR}"
 #    if [ -f $SERVER_SETTINGS/"helpTEMPLATE.yml" ] ; then
@@ -1181,7 +1188,7 @@ case "$1" in
                 echo " "
                 if [ "$3" == "all" ] ; then 
                     { for (( i = 0; i < $SERVERS; i++ )) ; do
-                        start_servers $i "$4"
+                        start_servers "$i" "$4"
                         sleep 2
                     done
                     echo " "
@@ -1189,7 +1196,7 @@ case "$1" in
                     }
                 else {
                     if [[ "$3" =~ ^[0-9]+$ ]] ; then
-                        start_servers "$3"
+                        start_servers "$3" "$4"
                         echo " "
                         show_screens
                     else
