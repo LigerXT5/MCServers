@@ -985,7 +985,7 @@ case "$1" in
                                 echo -e -n "\n${LIGHTGREEN}Do you wish to backup the WHOLE directory/server of ${GREEN}${SERVER_PATH[$2]}${LIGHTGREEN}?${NOCOLOR} "
                                 if [[ "$3" = [YyNn] ]] ; then
                                         yn="$3"
-                                    else {					
+                                    else {
                                         yes_or_no yn
                                     }
                                 fi
@@ -1273,9 +1273,9 @@ case "$1" in
             spigot) { 
                     echo -e "\n${LIGHTGREEN}Do you want to update your server ${GREEN}${BUILDTOOLS_SPIGOT}${LIGHTGREEN} file?${NOCOLOR}"
 			        if [[ "$3" = [YyNn] ]] ; then
-					    yn="$3"
-					else {					
-					    yes_or_no yn
+                        yn="$3"
+                    else {					
+                        yes_or_no yn
                     }
                     fi
                     echo " "
@@ -1295,9 +1295,9 @@ case "$1" in
             minecraft|vanilla) { 
                     echo -e "\n${LIGHTGREEN}Do you want to update your server ${GREEN}${MINECRAFT_SERVER}${LIGHTGREEN} file?${NOCOLOR}"
                     if [[ "$3" = [YyNn] ]] ; then
-					    yn="$3"
-					else {					
-					    yes_or_no yn
+                        yn="$3"
+                    else {					
+                        yes_or_no yn
                     }
                     fi
                     echo " "
@@ -1312,9 +1312,9 @@ case "$1" in
             snapshot) { 
                     echo -e "\n${LIGHTGREEN}Do you want to update your server ${GREEN}${MINECRAFT_SNAPSHOT}${LIGHTGREEN} file?${NOCOLOR}"
                     if [[ "$3" = [YyNn] ]] ; then
-					    yn="$3"
-					else {					
-					    yes_or_no yn
+                        yn="$3"
+                    else {					
+                        yes_or_no yn
                     }
                     fi
                     echo " "
@@ -1329,9 +1329,9 @@ case "$1" in
             bungee|bungeecord) { 
                     echo -e "\n${LIGHTGREEN}Do you want to update your ${GREEN}${BUNGEECORD} ${LIGHTGREEN}file?${NOCOLOR}"
                     if [[ "$3" = [YyNn] ]] ; then
-					    yn="$3"
-					else {					
-					    yes_or_no yn
+                        yn="$3"
+                    else {					
+                        yes_or_no yn
                     }
                     fi
                     echo " "
@@ -1347,9 +1347,9 @@ case "$1" in
                     echo -e "\n${LIGHTGREEN}Do you want to update ${YELLOW}ALL ${LIGHTGREEN}files?${NOCOLOR}"
                     echo -e "     ${RED}All URLs Should Be Updated in $SERVER_SETTINGS/servers.cfg${NOCOLOR}\n"
                     if [[ "$3" = [YyNn] ]] ; then
-					    "$3"  yn
-					else {					
-					    yes_or_no yn
+                        yn="$3"
+                    else {					
+                        yes_or_no yn
                     }
                     fi
                     case "$yn" in
