@@ -61,6 +61,7 @@ echo -e "\n${RED}ERROR! ${GREEN}${SERVER_SETTINGS}/servers.cfg ${RED}Not Found!$
         echo "MANUAL_BACKUPS_LOCATION=\"none\"                                                                                      #Choice of where backups are saved. Default: none = Disables Backup until directory is set."
         echo " "
         echo "SHOW_SCREENS=\"True\"                                                                                                 #Do you want to show the screen listings after server Start, Stop, and Restarts?"
+        echo "UNnEEDED_MENU_PAUSING=\"True\"                                                                                        #Set to False to disable unneeded pausing. Some menus/actions will have pausing due to actions waiting on responses or countdowns."
         echo " "
         echo "## Survival Server Settings"
         echo "#EXAMPLESURVIVAL=0                                                                                                  #Server Group Unique Name. Must be different than other server groups. Increment the ID# for each additional server listing. Best if you keep these in order."
@@ -107,8 +108,7 @@ echo -e "\n${RED}ERROR! ${GREEN}${SERVER_SETTINGS}/servers.cfg ${RED}Not Found!$
         echo "SHUTDOWN_MSG1[\$SURVIVAL]=\"Survival shutting down in \""
         echo "SHUTDOWN_MSG2[\$SURVIVAL]=\" Seconds.\""
     } >> servers.cfg
-
-    sleep 1
+    if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 1 ; fi
     echo -e "${LIGHTGREEN}Config ${GREEN}servers.cfg${LIGHTGREEN} created in ${GREEN}$SERVER_SETTINGS${LIGHTGREEN}.${NOCOLOR}"
     }
 fi
@@ -217,7 +217,7 @@ stop_servers() {
         i="3"
         while [ "$i" -gt 0 ]; do
             echo -e -n "${LIGHTGREEN} .${NOCOLOR}"
-            sleep 1
+            if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 1 ; fi
             : $((i--))
         done
         echo " "
@@ -232,12 +232,12 @@ stop_servers() {
             while [ "$i" -gt 0 ]; do
                 command "screen -rx ${SERVER_NAME[$1]} -X eval 'stuff \"${MSG_CMD[$1]} ${SHUTDOWN_MSG1[$1]}$i${SHUTDOWN_MSG2[$1]}\"\015'"
                 echo -e -n "${LIGHTGREEN} ${i}s...${NOCOLOR}"
-                sleep 1
+                if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 1 ; fi
                 : $((i--))
             done
             echo -e "\n${LIGHTGREEN}   Executing ${SHUTDOWN_CMD[$1]}."
             command "screen -rx ${SERVER_NAME[$1]} -X eval 'stuff \"${SHUTDOWN_CMD[$1]}\"\015'"
-            sleep 3
+            if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 3 ; fi
             echo -e -n "${LIGHTGREEN}   Waiting until server is offline.${NOCOLOR}"
             i="${SHUTDOWN_MAX_WAIT[$1]}"
             while [ "$i" -gt 0 ]; do
@@ -263,7 +263,7 @@ restart_servers() {
         echo -e -n "${YELLOW}Restarting ${LIGHTGREEN}Server ID:${GREEN}$1 ${SERVER_NAME[$1]}... ${NOCOLOR}"
         if is_running "$1" ; then
             stop_servers "$1"
-            sleep 2
+            if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 2 ; fi
             start_servers "$1"
         else
             start_servers "$1"
@@ -337,7 +337,7 @@ update_minecraft(){
         i="3"
         while [ "$i" -gt 0 ]; do
             echo -e -n "${LIGHTGREEN} .${NOCOLOR}"
-            sleep 1
+            if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 1 ; fi
             : $((i--))
         done
         echo -e "\n"
@@ -376,7 +376,7 @@ update_snapshot(){
         i="3"
         while [ "$i" -gt 0 ]; do
             echo -e -n "${LIGHTGREEN} .${NOCOLOR}"
-            sleep 1
+            if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 1 ; fi
             : $((i--))
         done
         echo -e "\n"
@@ -415,7 +415,7 @@ update_bungee(){
         i="3"
         while [ "$i" -gt 0 ]; do
             echo -e -n "${LIGHTGREEN} .${NOCOLOR}"
-            sleep 1
+            if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 1 ; fi
             : $((i--))
         done
         echo -e "\n"
@@ -438,7 +438,7 @@ show_screens(){
         echo -e "\n   ${LIGHTGREEN}Access Screen: ${YELLOW}service mcservers screen ID#${LIGHTGREEN}.${NOCOLOR}"
         echo -e "   ${LIGHTGREEN}If a \"${YELLOW}Starting!${LIGHTGREEN}\" server isn't listed, it's offline."
         echo -e "       ${LIGHTGREEN}If meant to be online, check the server log:${NOCOLOR}"
-        echo -e "       ${YELLOW}service mcservers log ID#${LIGHTGREEN}.${NOCOLOR}"
+        echo -e "       ${YELLOW}service mcservers view log ID#${LIGHTGREEN}.${NOCOLOR}"
         }
     fi
 }
@@ -460,7 +460,7 @@ yes_or_no(){
     echo -e "\n"
 }
 server_exist(){
-    if [ "$SERVER_NAME[$1]" = "" ] ; then
+    if [ "$SERVER_NAME[$1]" == "" ] ; then
         echo -e "\n${LIGHTGREEN}$1${YELLOW} Does Not Exist!"
         return 1
     else
@@ -610,12 +610,12 @@ spigotyml_template(){
                     echo "  #- give"
                     echo "  #- clear"
                     echo "messages:"
-                    echo "  whitelist: [Bouncer]: We are sorry, but you are not...\n on THE list..."
+                    echo "  whitelist: [Bouncer]: We are sorry, but you are not...\\n on THE list..."
                     echo "  unknown-command: I am sorry, but I did not understand..."
                     echo "  server-full: We cannot fit another warm body here..."
-                    echo "  outdated-client: Please update your client to {0}"
+                    echo "  outdated-client: Please update your client to \{0\}"
                     echo "  outdated-server: You young wipper snappers and your upgrading...\n You are on {0}, we are not quite there yet!"
-                    echo "  restart: Please return in a moment.\nRebooting conciousness..."
+                    echo "  restart: Please return in a moment.\\nRebooting conciousness..."
                     echo "stats:"
                     echo "  disable-saving: false"
                     echo "  forced-stats:"
@@ -866,13 +866,13 @@ case "$1" in
     start){     #Until I find a better way to have start/stop the server upon system start/stop, going to the basics.
         for (( i = 0; i < $SERVERS; i++ )) ; do
             start_servers $i skip
-            sleep 2
+            if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 2 ; fi
         done
     };;
     stop){      #Until I find a better way to have start/stop the server upon system start/stop, going to the basics.
         for (( i = 0; i < $SERVERS; i++ )) ; do
             stop_servers $i
-            sleep 5
+            if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 5 ; fi
         done
     };;
     screen){ 
@@ -936,7 +936,7 @@ case "$1" in
         fi
     };;
     backup){ 
-        if [ ${MANUAL_BACKUPS_LOCATION} == "none" ] ; then
+        if [ "${MANUAL_BACKUPS_LOCATION}" == "none" ] ; then
             {
             echo -e "${LIGHTGREEN}Backup Function Disabled Until MANUAL_BACKUPS_LOCATION is set with a directory.${NOCOLOR}"
         }
@@ -1071,7 +1071,7 @@ case "$1" in
             };;
         esac
         echo -e "${LIGHTGREEN}To modify the default templates, ${YELLOW}service mcservers edit nameTEMPLATE.yml${NOCOLOR}\n"
-        sleep 2
+        if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 2 ; fi
     };;
     edit|view){ 
         echo -e "\n${YELLOW}CAUTION! ${LIGHTGREEN}Never Use TAB while editing. Use Spaces!${NOCOLOR}"
@@ -1195,7 +1195,7 @@ case "$1" in
             };;
         esac
         echo -e "\n${LIGHTGREEN}To modify the files in the servers or templates, ${YELLOW}service mcservers edit${NOCOLOR}"
-        sleep 2
+        if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 2 ; fi
     };;
     server|servers){
         case "$2" in
@@ -1204,7 +1204,7 @@ case "$1" in
                 if [ "$3" == "all" ] ; then 
                     { for (( i = 0; i < $SERVERS; i++ )) ; do
                         start_servers "$i" "$4"
-                        sleep 2
+                        if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 2 ; fi
                     done
                     echo " "
                     show_screens
@@ -1225,7 +1225,7 @@ case "$1" in
                 if [ "$3" == "all" ] ; then 
                     for (( i = 0; i < $SERVERS; i++ )) ; do
                         stop_servers $i
-                        sleep 5
+                        if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 5 ; fi
                     done
                     echo " "
                     show_screens
@@ -1245,7 +1245,7 @@ case "$1" in
                 if [ "$3" == "all" ] ; then 
                     for (( i = 0; i < $SERVERS; i++ )) ; do
                         restart_servers $i "$4"
-                        sleep 5
+                        if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 5 ; fi
                     done
                     echo " "
                     show_screens
@@ -1274,7 +1274,7 @@ case "$1" in
                 else { 
                     for (( i = 0; i < $SERVERS; i++ )) ; do
                         get_running $i
-                        sleep 1
+                        if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 1 ; fi
                     done
                     echo " "
                     show_screens
@@ -1425,7 +1425,7 @@ case "$1" in
             echo -e "   ${LIGHTGREEN} Clean ID# Days#${NOCOLOR}  - ${LIGHTGREEN}Clean out backups older than #Days. Add Y skips question.${NOCOLOR}"
             echo -e "   ${LIGHTGREEN} List ID#${NOCOLOR}         - ${LIGHTGREEN}Lists all backups residing in backup directory${NOCOLOR}"
             echo -e "\n${LIGHTGREEN} Help${NOCOLOR}                - ${LIGHTGREEN}What you see before you now...${NOCOLOR}"
-            echo -e "${LIGHTGREEN}Version: ${GREEN}1.19 Jan 3, 2016${NOCOLOR}"
+            echo -e "${LIGHTGREEN}Version: ${GREEN}1.20 Jan 5, 2016${NOCOLOR}"
             echo -e "\n${LIGHTGREEN}Use of these commands are as follows:${YELLOW} service mcservers server status 1${NOCOLOR}"
           };;
 esac
