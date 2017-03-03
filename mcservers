@@ -43,7 +43,7 @@ else {
 #    create_serverscfg
 echo -e "\n${RED}ERROR! ${GREEN}${SERVER_SETTINGS}/servers.cfg ${RED}Not Found!${NOCOLOR}"
     echo -e "${YELLOW}Creating Default Template...${NOCOLOR}" 
-    cd "$SERVER_SETTINGS" ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+    cd "$SERVER_SETTINGS" ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} ${NOCOLOR}\n" && exit; }
     {
         echo "# Server Settings servers.cfg"
         echo " "
@@ -189,7 +189,7 @@ start_servers() {
                                 case "$yn" in
                                     Y) {
                                             echo -e "\n${LIGHTGREEN}Creating ${GREEN}${SERVER_PATH[$1]} ${LIGHTGREEN}in ${GREEN}${SERVER_SETTINGS}${LIGHTGREEN}...${NOCOLOR}"
-                                            cd "${SERVER_SETTINGS}" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+                                            cd "${SERVER_SETTINGS}" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} ${NOCOLOR}\n" && exit; }
                                             mkdir "${SERVER_PATH[$1]}"
                                             echo -e "${LIGHTGREEN}Created.${NOCOLOR}"
                                         };;
@@ -201,7 +201,7 @@ start_servers() {
                         }
                     fi
                 done
-                cd "$SERVER_SETTINGS/${SERVER_PATH[$1]}" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS}/${SERVER_PATH[$1]} from " pwd "!${NOCOLOR}\n" && exit; }
+                cd "$SERVER_SETTINGS/${SERVER_PATH[$1]}" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS}/${SERVER_PATH[$1]} ${NOCOLOR}\n" && exit; }
                 command "screen -dmS ${SERVER_NAME[$1]} ${START_ARGS[$1]} -Dserver=${SERVER_NAME[$1]} ${SERVER_CORE[$1]}"
                 echo -e "   ${GREEN}Starting!${NOCOLOR}"
             else
@@ -274,7 +274,12 @@ update_spigot(){
     if [ "${BUILDTOOLS_URL}" == "none"  ] ; then
         echo -e "\n${YELLOW}Skipping... BUILDTOOLS_URL=\"none\"\n${NOCOLOR}"
     else
-        cd "$SERVER_SETTINGS/buildtools" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS}/buildtools from " pwd "!${NOCOLOR}\n" && exit; }
+        if [ -d "$SERVER_SETTINGS/buildtools" ] ; then
+            echo -e -n "$LIGHTGREEN} $SERVER_SETTINGS/buildtools exists. Proceeding... ${NOCOLOR}"
+        else
+            mkdir "$SERVER_SETTINGS/buildtools"
+        fi
+        cd "$SERVER_SETTINGS/buildtools" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS}/buildtools!${NOCOLOR}\n" && exit; }
         if [ "$1" == "clean" ] ; then
             echo " "
             echo -e -n "${LIGHTGREEN}Cleaning Up in: ${NOCOLOR}"
@@ -298,7 +303,7 @@ update_spigot(){
         echo -e "\n${LIGHTGREEN}Downloading ${GREEN}BuildTools.jar${LIGHTGREEN}...${NOCOLOR}"
         curl "${BUILDTOOLS_URL}" -o "BuildTools.jar"
         echo -e "\n${LIGHTGREEN}Running ${GREEN}Buildtools.jar${NOCOLOR}\n"
-        HOME=$USER_DIRECTORY java -jar "BuildTools.jar" "${BUILDTOOLS_BUILD_VERSION}"
+        HOME=$USER_DIRECTORY java -jar BuildTools.jar ${BUILDTOOLS_BUILD_VERSION}
         #${BUILDTOOL_BUILD_VERSION}
         echo -e "\n${LIGHTGREEN}Copying${GREEN} ${BUILDTOOLS_SPIGOT} ${LIGHTGREEN}to${GREEN} $SERVER_SETTINGS ${LIGHTGREEN}as${GREEN} ${BUILDTOOLS_OUTPUT}${LIGHTGREEN}.${NOCOLOR}"
         if [ -f "${BUILDTOOLS_SPIGOT}" ] ; then
@@ -320,7 +325,7 @@ update_minecraft(){
         exit
     else
         echo -e -n "${LIGHTGREEN}Deleting Old ${GREEN}${MINECRAFT_SERVER}${LIGHTGREEN}...${NOCOLOR}"
-        cd "$SERVER_SETTINGS" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+        cd "$SERVER_SETTINGS" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} ${NOCOLOR}\n" && exit; }
         pwd;
         if [ -f "${MINECRAFT_SERVER}" ] ; then
             { rm "${MINECRAFT_SERVER}"
@@ -359,7 +364,7 @@ update_snapshot(){
         echo -e "\n${YELLOW}Skipping... MINECECRAFT_SNAPSHOT_URL=\"none\"\n${NOCOLOR}"
     else
         echo -e -n "${LIGHTGREEN}Deleting Old ${GREEN}${MINECRAFT_SNAPSHOT}${LIGHTGREEN}... ${NOCOLOR}"
-        cd "$SERVER_SETTINGS" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+        cd "$SERVER_SETTINGS" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} ${NOCOLOR}\n" && exit; }
         pwd;
         if [ -f "${MINECRAFT_SNAPSHOT}" ] ; then
             { rm "${MINECRAFT_SNAPSHOT}"
@@ -398,7 +403,7 @@ update_bungee(){
         echo -e "\n${YELLOW}Skipping... BUNGEECORD_URL=\"none\"\n${NOCOLOR}"
     else
         echo -e -n "${LIGHTGREEN}Deleting Old ${GREEN}${BUNGEECORD}... ${NOCOLOR}"
-        cd "$SERVER_SETTINGS" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+        cd "$SERVER_SETTINGS" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} ${NOCOLOR}\n" && exit; }
         pwd;
             if [ -f "${BUNGEECORD}" ] ; then
             { rm "${BUNGEECORD}"
@@ -481,7 +486,7 @@ commandsyml_template(){
         yn="Y"
     fi
     case "$yn" in
-        Y)  { cd "$SERVER_SETTINGS" ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+        Y)  { cd "$SERVER_SETTINGS" ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} ${NOCOLOR}\n" && exit; }
                 {
                     echo "# This is the commands configuration file for Bukkit."
                     echo "# For documentation on how to make use of this file, check out the Bukkit Wiki at"
@@ -558,7 +563,7 @@ spigotyml_template(){
         yn="Y"
     fi
     case "$yn" in
-        Y)  { cd "$SERVER_SETTINGS" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+        Y)  { cd "$SERVER_SETTINGS" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} ${NOCOLOR}\n" && exit; }
                 {
                     echo "# This is the main configuration file for Spigot."
                     echo "# As you can see, theres tons to configure. Some options may impact gameplay, so use"
@@ -716,7 +721,7 @@ spigotyml_template(){
 #        yn="Y"
 #    fi
 #    case "$yn" in
-#        Y)  { cd $SERVER_SETTINGS ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+#        Y)  { cd $SERVER_SETTINGS ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} ${NOCOLOR}\n" && exit; }
 #                {
 #                    echo ""
 #                } >> helpTEMPLATE.yml
@@ -738,7 +743,7 @@ bukkityml_template(){
         yn="Y"
     fi
     case "$yn" in
-        Y)  { cd "$SERVER_SETTINGS" ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+        Y)  { cd "$SERVER_SETTINGS" ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} ${NOCOLOR}\n" && exit; }
                 {
                     echo "# This is the main configuration file for Bukkit."
                     echo "# As you can see, theres actually not that much to configure without any plugins."
@@ -806,7 +811,7 @@ serverproperties_template(){
         yn="Y"
     fi
     case "$yn" in
-        Y)  { cd "$SERVER_SETTINGS" ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+        Y)  { cd "$SERVER_SETTINGS" ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} ${NOCOLOR}\n" && exit; }
                 {
                     echo "#All variables listed are explained at: http://minecraft.gamepedia.com/Server.properties"
                     echo "#Minecraft server properties"
@@ -1165,7 +1170,7 @@ case "$1" in
                                 yes_or_no yn
                                 case "$yn" in
                                     Y){
-                                        cd "${SERVER_SETTINGS}" ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} from " pwd "!${NOCOLOR}\n" && exit; }
+                                        cd "${SERVER_SETTINGS}" ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} ${NOCOLOR}\n" && exit; }
                                         cp "${templatefile}" "${SERVER_PATH[$3]}/$2"
                                         echo -e "\n${LIGHTGREEN}$2${LIGHTGREEN} in ${GREEN}${SERVER_PATH[$3]}${LIGHTGREEN} has been overwritten by ${GREEN}${templatefile}${LIGHTGREEN}.${NOCOLOR}"
                                     };;
@@ -1425,7 +1430,7 @@ case "$1" in
             echo -e "   ${LIGHTGREEN} Clean ID# Days#${NOCOLOR}  - ${LIGHTGREEN}Clean out backups older than #Days. Add Y skips question.${NOCOLOR}"
             echo -e "   ${LIGHTGREEN} List ID#${NOCOLOR}         - ${LIGHTGREEN}Lists all backups residing in backup directory${NOCOLOR}"
             echo -e "\n${LIGHTGREEN} Help${NOCOLOR}                - ${LIGHTGREEN}What you see before you now...${NOCOLOR}"
-            echo -e "${LIGHTGREEN}Version: ${GREEN}1.20 Jan 5, 2016${NOCOLOR}"
+            echo -e "${LIGHTGREEN}Version: ${GREEN}1.21 March 3, 2017${NOCOLOR}"
             echo -e "\n${LIGHTGREEN}Use of these commands are as follows:${YELLOW} service mcservers server status 1${NOCOLOR}"
           };;
 esac
