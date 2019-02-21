@@ -414,7 +414,7 @@ stop_servers() {
             if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 3 ; fi
             echo -e -n "${LIGHTGREEN}   Waiting until server is offline.${NOCOLOR}"
             i="${SHUTDOWN_MAX_WAIT[$1]}"
-            debug "stop_servers: Shutdown_Max_Wait=    ${SHUTDOWN_MAX_WAIT[$1]seconds}"    #debug
+            debug "stop_servers: Shutdown_Max_Wait=    ${SHUTDOWN_MAX_WAIT[$1]}seconds"    #debug
             while [ "$i" -gt 0 ]; do
                 if is_running "$1" ; then
                     echo -e -n "${LIGHTGREEN} .${NOCOLOR}"
