@@ -16,13 +16,9 @@
 #       This script will allow you to update and run various tasks.
 ### END INIT INFO
 #
-#
-# Script Configuration Setting
-User=root
-USER_DIRECTORY="/home/minecraft"
-MINECRAFT_DIRECTORY="MCServers"
+
 #Screen color output. Change the color codes to your choices.
-#References https://wiki.archlinux.org/index.php/Color_Bash_Prompt#List_of_colors_for_prompt_and_Bash
+#References https://misc.flogisoft.com/bash/tip_colors_and_formatting
 #Just change what appears between the ' and '.
 #Do NOT change the name before the =, it's used as references in the script.
 #If you wish to have no color, replace the codes for colors with the code for NOCOLOR: \033[0m
@@ -30,58 +26,177 @@ RED='\e[0;31m'          # Red
 GREEN='\e[0;32m'        # Green
 LIGHTGREEN='\e[0;92m'   # Light Green
 YELLOW='\e[0;33m'       # Yellow
+DEBUG='\e[0;35m'       # Debug Text
 ###DO NOT CHANGE BELOW!
-NOCOLOR='\033[0m'       # Reset
-exist="false"
+NOCOLOR='\033[0m'       # Reset All Attributes
+exist="false"           # Filler Temp Variable for random loop usage. Need to do something more standard.
 ###
-#
+
+# Script Configuration Setting
+
+DEBUGGING="FALSE"
+
+debug() {
+    if [[ "${DEBUGGING}" =~ ^(True|true|TRUE)$ ]] ; then 
+        echo -e "${DEBUG}    DEBUG LOG:    $@${NOCOLOR}"
+    fi
+}
+debug "Debugging:     Enabled"
+
+IfRootDefaultUserDirectory="minecraft"
+debug "IfRootDefaultUserDirectory=     $IfRootDefaultUserDirectory"     #debug
+
+if [ "$(whoami)" == "root" ] ; then
+    User="$IfRootDefaultUserDirectory"
+    debug "1.User=  $User"
+else
+    User="$(whoami)"
+    debug "2.User=  $User"
+fi
+
+USER_DIRECTORY="/home/$User"
+debug "User Directory=      $USER_DIRECTORY"          #debug
+
+MINECRAFT_DIRECTORY="MCServers"
+debug "Minecraft Directory= $MINECRAFT_DIRECTORY"       #debug
+
+#MCSERVERS_SCRIPTS="$USER_DIRECTORY/$MINECRAFT_DIRECTORY/MCServers-Scripts"
+#debug "MCSERVERS_SCRIPTS=   $MCSERVERS_SCRIPTS"        #debug
+
 # Load Settings
 SERVER_SETTINGS="$USER_DIRECTORY/$MINECRAFT_DIRECTORY"
+debug "SERVER_SETTINGS=     $SERVER_SETTINGS"           #debug
+
+command() {
+    ME=$(whoami)
+    debug "Command Segment:"            #debug
+    debug "Me=Who: ME =   $ME"          #debug
+    debug "User:          $User"        #debug
+    
+    if [ "$ME" == "$User" ] ; then
+        debug "bash -c:       $1\n"     #debug
+        bash -c "$1"
+    else
+        debug "su $User -c:       $1\n" #debug
+        su "$User" -c "$1"
+    fi
+}
 if [ -f "$SERVER_SETTINGS/servers.cfg" ] ; then
+    debug "Loading Server Config from ${SERVER_SETTINGS}"
     . "$SERVER_SETTINGS/servers.cfg"
 else {
 #    create_serverscfg
-echo -e "\n${RED}ERROR! ${GREEN}${SERVER_SETTINGS}/servers.cfg ${RED}Not Found!${NOCOLOR}"
+    debug "No config found at ${SERVER_SETTINGS}"
+    echo -e "\n${RED}ERROR! ${GREEN}${SERVER_SETTINGS}/servers.cfg ${RED}Not Found!${NOCOLOR}"
     echo -e "${YELLOW}Creating Default Template...${NOCOLOR}" 
     if [ -d "$SERVER_SETTINGS" ] ; then
         echo -e -n "${LIGHTGREEN} $SERVER_SETTINGS exists. Proceeding... ${NOCOLOR}"
     else
-        mkdir "$SERVER_SETTINGS"
+        debug "Directory at $SERVER_SETTINGS not found!"
+        mkdir "$SERVER_SETTINGS" || { echo -e -n "${RED}ERROR! Cannot Create Directory to ${SERVER_SETTINGS}${NOCOLOR}\n" && exit; }
     fi
-    cd "$SERVER_SETTINGS" ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} ${NOCOLOR}\n" && exit; }
+    cd "$SERVER_SETTINGS" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS}${NOCOLOR}\n" && exit; }
     {
         echo "# Server Settings servers.cfg"
         echo " "
-        echo "BUNGEECORD_URL=\"http://ci.md-5.net/job/BungeeCord/lastBuild/artifact/bootstrap/target/BungeeCord.jar\"               #Newest Builds of Bungeecord.jar. Type \"none\" if you do not wish to download this."
-        echo "BUNGEECORD=\"BungeeCord.jar\"                                                                                         #Choice name of saved and displayed .jar"
-        echo "BUILDTOOLS_URL=\"https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar\" #Newest Builds of Buildtools. Type \"none\" if you do not wish to download this."
-        echo "BUILDTOOLS_BUILD_VERSION=\"--rev latest\"                                                                             #Leave blank for current release version of MC. If specific build wanted, add: --rev 1.8, --rev 1.8.8, --rev latest."
-        echo "BUILDTOOLS_SPIGOT=\"spigot-1.11.2.jar\"                                                                               #Make sure this is the exact name of the spigot file output from BuildTools.jar."
-        echo "BUILDTOOLS_OUTPUT=\"Spigot.jar\"                                                                                      #Choice name of buildtools.jar output to be renamed to when copied out of buildtools."
-        echo "SPIGOT_LATEST=\"Spigot.jar\"                                                                                          #Choice name of saved and displayed .jar"
-        echo "MINECRAFT_SERVER_URL=\"https://s3.amazonaws.com/Minecraft.Download/versions/1.11.2/minecraft_server.1.11.2.jar\"      #Choice version of minecraft_server.jar. Update URL when Mojang releases newer versions.  Type \"none\" if you do not wish to download this."
-        echo "MINECRAFT_SERVER=\"Minecraft_Server.jar\"                                                                             #Choice name of saved and displayed .jar"
-        echo "MINECRAFT_SNAPSHOT_URL=\"none\"                                                                                       #Choice version of minecraft__snapshot_server.jar. Update URL to your choice. Can be used for custom versions of MC/Forge/Sponge/etc.  Type \"none\" if you do not wish to download this."
-        echo "MINECRAFT_SNAPSHOT=\"Minecraft_Snapshot_Server.jar\"                                                                  #Choice name of saved and displayed .jar"
-        echo "MANUAL_BACKUPS_LOCATION=\"none\"                                                                                      #Choice of where backups are saved. Default: none = Disables Backup until directory is set."
+        echo "  #Newest Builds of Bungeecord.jar. Type \"none\" if you do not wish to download this."
+        echo "BUNGEECORD_URL=\"http://ci.md-5.net/job/BungeeCord/lastBuild/artifact/bootstrap/target/BungeeCord.jar\""
         echo " "
-        echo "SHOW_SCREENS=\"True\"                                                                                                 #Do you want to show the screen listings after server Start, Stop, and Restarts?"
-        echo "UNnEEDED_MENU_PAUSING=\"True\"                                                                                        #Set to False to disable unneeded pausing. Some menus/actions will have pausing due to actions waiting on responses or countdowns."
+        echo "  #Name for Bungeecord.jar when downloaded and saved."
+        echo "BUNGEECORD=\"BungeeCord.jar\""
         echo " "
-        echo "## Survival Server Settings"
-        echo "#EXAMPLESURVIVAL=0                                                                                                  #Server Group Unique Name. Must be different than other server groups. Increment the ID# for each additional server listing. Best if you keep these in order."
-        echo "#SERVER_ENABLED[\$EXAMPLESURVIVAL]=\"true\"                                                                            #Is this server allowed to start? If Yes, \"true\", otherwise \"false.\" By Command Request: \"manual\" then service mcservers server start ID# OVERRIDE. Note: OVERRIDE must be capitalized!"
-        echo "#SERVER_NAME[\$EXAMPLESURVIVAL]=\"Survival\"                                                                           #Server Group Display/Screen Name. Can be anything."
-        echo "#SERVER_PATH[\$EXAMPLESURVIVAL]=\"Survival\"                                                                           #Server root directory where the server_core.jar will be saved and executed? Directory must be in same location as this config."
-        echo "#SERVER_CORE[\$EXAMPLESURVIVAL]=\"Spigot.jar\"                                                                         #Server Core .jar name to run off of. Good use if using custom .jar files separate from last Buildtools run."
-        echo "#SERVER_EXTRAS[\$EXAMPLESURVIVAL]=\"none\"                                                                             #If none to place, place: \"none\". Ex: \"rm /plugins/plugin/data.txt && command two\""
-        echo "#START_ARGS[\$EXAMPLESURVIVAL]=\"java -server -Xmx1024M -XX:+UseConcMarkSweepGC -jar\"                                 #Server starting arguments. Best only to change the -Xmx for memory use and server.jar at the end." #Removed max perm size, no longer needed since MC 1.8
-        echo "#SHUTDOWN_CMD[\$EXAMPLESURVIVAL]=\"stop\"                                                                              #Command used to tell the server, nicely, to shut down via screen/console."
-        echo "#MSG_CMD[\$EXAMPLESURVIVAL]=\"say\"                                                                                    #Command used to announce the SHUTDOWN_MSG1 and 2 prior to shutdown. Used for announced countdown."
-        echo "#SHUTDOWN_MAX_WAIT[\$EXAMPLESURVIVAL]=30                                                                             #How long to wait until server is shut down completely, before continueing on with the script. If server is down before the set number, the script exits."
-        echo "#SHUTDOWN_SECONDS[\$EXAMPLESURVIVAL]=20                                                                              #Number of seconds until MSG_CMD is used to shut down. Each second repeates the shutdown_msgs as the countdown decreases."
-        echo "#SHUTDOWN_MSG1[\$EXAMPLESURVIVAL]=\"&KD&rShutting down in \"                                                           #First half of the shutdown message, followed by the number of seconds remaining."
-        echo "#SHUTDOWN_MSG2[\$EXAMPLESURVIVAL]=\" Seconds&KD&r.\"                                                                   #Second half of the shutdown message, after the number of seconds remaining."
+        echo "  #URL to the newest build of Buildtools. Type \"none\" if you absolutely do not wish to download this."
+        echo "BUILDTOOLS_URL=\"https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar\""
+        echo " "
+        echo "  #Leave blank or latest for current release version of Spigot MC. If specific build wanted, type: 1.8, 1.8.8, etc."
+        echo "    #Note: If the specific Spigot MC build fails, the last lines of the Build Tools may reference using older Java builds."
+        echo "    #Newer builds use (Linux) Java 10, while previous versions of MC were built on older Java versions."
+        echo "    #Older MC Builds do not work on newer releases of Java, that did not exist when they were released."
+        echo "BUILDTOOLS_BUILD_VERSION=\"latest\""
+        echo " "
+        echo "  #Clean will erase the contents of the Buildtools folder, and run fresh. Runs slower, less possible issues/conflicts."
+        echo "  #Normal will not erase the contents of the Buildtools folder. Runs faster, possible chance of issues/conflicts."
+        echo "BUILDTOOLSCLEAN=\"clean\""
+        echo " "
+        echo "  #Name of the Buildtools Output of the Spigot MC file."
+        echo "    #Both Latest and Specific Builds start with this."
+        echo "    #Do not include .jar"
+        echo "BUILDTOOLS_OUTPUT=\"spigot-\""
+        echo " "
+        echo "  #Prefix Name of the Buildtools Output of the Overridden MC Release build. Ex: 1.8.8"
+        echo "    #Example:  spigot-1.8.8.jar, if Cus_Output=\"spigot-\" and Build_Version=1.8.8"
+        echo "    #This is the file that the Specific MC release Spigot Build servers will pull and use on launch."
+        echo "    #Do not include .jar"
+        echo "BUILDTOOLS_CUS_OUTPUT=\"spigot-\""
+        echo " "
+        echo "  #Extracted file name of the latest Spigot file."
+        echo "    #This is the file that the Latest Spigot Build servers will pull and use on launch."
+        echo "    #Do not include .jar"
+        echo "SPIGOT_LATEST=\"Spigot\""
+        echo " "
+        echo "  #URL to the Vanilla version of the minecraft_server.jar. Update URL when Mojang releases newer versions."
+        echo "    #Type \"none\" if you do not wish to download this."
+        echo "MINECRAFT_SERVER_URL=\"https://s3.amazonaws.com/Minecraft.Download/versions/1.13.2/minecraft_server.1.13.2.jar\""
+        echo " "
+        echo "  #The save as name of the downloaded Vanilla Minecraft Server.jar file."
+        echo "    #Do not include .jar"
+        echo "MINECRAFT_SERVER=\"Minecraft_Server\""
+        echo " "
+        echo "  #URL to the Vanilla Snapshot version of the minecraft_server.jar. Update URL when Mojang releases newer versions."
+        echo "    #Type \"none\" if you do not wish to download this."
+        echo "MINECRAFT_SNAPSHOT_URL=\"https://launcher.mojang.com/v1/objects/f8078dd487483a917645f7a5561290e28bd875c4/server.jar\""
+        echo " "
+        echo "  #The save as name of the downloaded Vanilla Snapshot Minecraft Server.jar file."
+        echo "    #Do not include .jar"
+        echo "MINECRAFT_SNAPSHOT=\"Minecraft_Snapshot_Server\""
+        echo " "
+        echo "  #Choice of where backups are saved. Default: \"none\" = Disables Backup until directory is set. Example: /home/minecraft/Dropbox/MCDenServerBackups"
+        echo "MANUAL_BACKUPS_LOCATION=\"none\""
+        echo " "
+        echo " "
+        echo "#Terminal Response Personality."
+        echo " "
+        echo "  #Do you want to show the Screen listings after server Start, Stop, and Restarts?"
+        echo "    #Options: True or False, ONLY."
+        echo "SHOW_SCREENS=\"true\""
+        echo " "
+        echo "  #Some menus as fancy, but useless, pausing. Some areas are actually doing stuff between pauses/counting."
+        echo "    #Options: True or False, ONLY."
+        echo "UNNEEDED_MENU_PAUSING=\"true\""
+#        echo " "
+#        echo "  #Extra details spout about for debugging purposes. Anything besides True will disable this."
+#        echo "DEBUGGING=\"FALSE\""
+        echo " "
+        echo "#Terminal Output Color Coding."
+        echo "  #Edit ONLY if you know how to control terminal colors."
+        echo "  #References https://misc.flogisoft.com/bash/tip_colors_and_formatting"
+        echo "  #Just change what appears between the \' and \'."
+        echo "  #If you wish to have no color, replace the codes for colors with the code for NOCOLOR: \\033[0m"
+        echo "    #If you break one or more, can be copied from the top of the MCSERVERS script file. Otherwise delete these and defaults will be pulled from the script."
+        echo "RED=\'\\e[0;31m\'          # Red           - WARNING!"
+        echo "GREEN=\'\\e[0;32m\'        # Green         - Focused Text"
+        echo "LIGHTGREEN=\'\\e[0;92m\'   # Light Green   - Regular Text"
+        echo "YELLOW=\'\\e[0;33m\'       # Yellow        - Caution!"
+        echo " "
+        echo " "
+        echo "#Grouped Servers. Each server identified numerically starting at 0."
+        echo "    #Author Note: Eventually I'll update the script for creating and deleting server listings."
+        echo "    #Until then, copy the example or one of the others, and alter as needed."
+        echo " "
+        echo "  #Example Config of a Survival Server"
+        echo "#EXAMPLESURVIVAL=0                                                                      #Server Group Unique Name. Must be different than other server groups. Increment the ID# for each additional server listing. Best if you keep these in order."
+        echo "#SERVER_ENABLED[\$EXAMPLESURVIVAL]=\"true\"                                             #Is this server allowed to start? If Yes, \"true\", otherwise \"false.\" By Command Request: \"manual\" then service mcservers server start ID# OVERRIDE. Note: OVERRIDE must be capitalized!"
+        echo "#SERVER_NAME[\$EXAMPLESURVIVAL]=\"Survival\"                                            #Server Group Display/Screen Name. Can be anything."
+        echo "#SERVER_PATH[\$EXAMPLESURVIVAL]=\"Survival\"                                            #Server root directory where the server_core.jar will be saved and executed? Directory must be in same location as this config."
+        echo "#SERVER_CORE[\$EXAMPLESURVIVAL]=\"Spigot.jar\"                                          #Server Core .jar name to run off of. Good use if using custom .jar files separate from last Buildtools run."
+        echo "#SERVER_EXTRAS[\$EXAMPLESURVIVAL]=\"none\"                                              #If none to place, place: \"none\". Ex: \"rm /plugins/plugin/data.txt && command two\""
+        echo "#START_ARGS[\$EXAMPLESURVIVAL]=\"java -server -Xmx1024M -XX:+UseConcMarkSweepGC -jar\"  #Server starting arguments. Best only to change the -Xmx for memory use and server.jar at the end." #Removed max perm size, no longer needed since MC 1.8
+        echo "#SHUTDOWN_CMD[\$EXAMPLESURVIVAL]=\"stop\"                                               #Command used to tell the server, nicely, to shut down via screen/console."
+        echo "#MSG_CMD[\$EXAMPLESURVIVAL]=\"say\"                                                     #Command used to announce the SHUTDOWN_MSG1 and 2 prior to shutdown. Used for announced countdown."
+        echo "#SHUTDOWN_MAX_WAIT[\$EXAMPLESURVIVAL]=30                                                #How long to wait until server is shut down completely, before continueing on with the script. If server is down before the set number, the script exits."
+        echo "#SHUTDOWN_SECONDS[\$EXAMPLESURVIVAL]=20                                                 #Number of seconds until MSG_CMD is used to shut down. Each second repeates the shutdown_msgs as the countdown decreases."
+        echo "#SHUTDOWN_MSG1[\$EXAMPLESURVIVAL]=\"&KD&rShutting down in \"                            #First half of the shutdown message, followed by the number of seconds remaining."
+        echo "#SHUTDOWN_MSG2[\$EXAMPLESURVIVAL]=\" Seconds&KD&r.\"                                    #Second half of the shutdown message, after the number of seconds remaining."
         echo " "
         echo "# BungeeCord Server Settings"
         echo "BUNGEE=0"
@@ -99,7 +214,7 @@ echo -e "\n${RED}ERROR! ${GREEN}${SERVER_SETTINGS}/servers.cfg ${RED}Not Found!$
         echo "SHUTDOWN_MSG2[\$BUNGEE]=\" Seconds.\""
         echo " "
         echo "# Spigot Survival Server Settings"
-        echo "SURVIVAL=0"
+        echo "SURVIVAL=1"
         echo "SERVER_ENABLED[\$SURVIVAL]=true"
         echo "SERVER_NAME[\$SURVIVAL]=\"Survival\""
         echo "SERVER_PATH[\$SURVIVAL]=\"Survival\""
@@ -116,106 +231,141 @@ echo -e "\n${RED}ERROR! ${GREEN}${SERVER_SETTINGS}/servers.cfg ${RED}Not Found!$
     if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 1 ; fi
     echo -e "${LIGHTGREEN}Config ${GREEN}servers.cfg${LIGHTGREEN} created in ${GREEN}$SERVER_SETTINGS${LIGHTGREEN}.${NOCOLOR}"
     }
+debug "ServersCFG Load: >End<"
 fi
 #
 #
 # Run commands as the user supplied in $USER
-command() {
-    ME=$(whoami)
-    if [ "$ME" == $User ] ; then
-        bash -c "$1"
-    else
-        su $User -c "$1"
-    fi
-}
 # Check if the screen is running.
 is_running() {
+    debug "Is_Running:  $SERVER_NAME{$1}"
     if ps ax | grep java | grep "${SERVER_NAME[$1]}" > /dev/null ; then
         return 0    #If the screen does NOT exist, returns false, or nothing.
+        debug "Is_Running: Returning 0"
     else
         return 1    #If the screen does exist, return true.
+        debug "Is_Running: Returning 1"
     fi
+    debug "is_Running: >End<"
 }
 # Checks if the server is running then send a message. # Bug Found, needs fixed. If status checking a server ID higher than current listed servers, shows ID (NoName) Active, even though it doesn't exist.
 get_running() {
-    if is_running "$1" ; then
-        echo -e "${LIGHTGREEN}Server ID:${GREEN}$1 ${SERVER_NAME[$1]}${LIGHTGREEN}: Active.${NOCOLOR}"
-    else
-        if [ "${SERVER_ENABLED[$1]}" = true ] ; then
-            echo -e "${LIGHTGREEN}Server ID:${GREEN}$1 ${SERVER_NAME[$1]}${LIGHTGREEN}: ${RED}Offline.${NOCOLOR}"
+    debug "Get_Running:"
+    debug "Get_Running: $@"
+    if server_exist "$1" ; then
+        debug "Get_Running $1 Exists!:"   #debug
+        if is_running "$1" ; then
+            debug "1.Get_Running is running= $1:"   #debug
+            if [ "${SERVER_ENABLED[$1]}" = true ] ; then 
+                debug "Get_Running True ${SERVER_NAME[$1]}= True"    #debug
+                echo -e "     ${GREEN}AUTO      ${GREEN}$1      ${LIGHTGREEN}Active     ${GREEN}${SERVER_NAME[$1]}${NOCOLOR}"
+            elif [ "${SERVER_ENABLED[$1]}" = manual ] ; then
+                debug "Get_Running True ${SERVER_NAME[$1]}= Manual"  #debug
+                echo -e "     ${GREEN}Manual         ${GREEN}$1      ${RED}Offline    ${GREEN}${SERVER_NAME[$1]}${NOCOLOR}"
+            else
+                debug "Get_Running True ${SERVER_NAME[$1]}= ${SERVER_ENABLED[$1]}"   #debug
+                echo -e " ${YELLOW}OVERRIDDEN?    ${GREEN}$1      ${YELLOW}Disabled   ${GREEN}${SERVER_NAME[$1]}${NOCOLOR}"
+            fi
+        elif [ "${SERVER_ENABLED[$1]}" = true ] ; then
+            debug "Get_Running False ${SERVER_NAME[$1]}= True"  #debug
+            echo -e "     ${RED}AUTO?     ${GREEN}$1      ${RED}Offline    ${GREEN}${SERVER_NAME[$1]}${NOCOLOR}"
+        elif [ "${SERVER_ENABLED[$1]}" = manual ] ; then
+            debug "Get_Running False ${SERVER_NAME[$1]}= Manual"  #debug
+            echo -e "     ${GREEN}Manual    ${GREEN}$1      ${RED}Offline    ${GREEN}${SERVER_NAME[$1]}${NOCOLOR}"
         else
-            echo -e "${LIGHTGREEN}Server ID:${GREEN}$1 ${SERVER_NAME[$1]}${LIGHTGREEN}: ${YELLOW}Disabled.${NOCOLOR}"
+            debug "Get_Running False ${SERVER_NAME[$1]}= ${SERVER_ENABLED[$1]}"   #debug
+            echo -e "              ${GREEN}$1       ${YELLOW}Disabled   ${GREEN}${SERVER_NAME[$1]}${NOCOLOR}"
         fi
+    else
+        debug "Get_Running $1 Does Not Exist!:"   #debug
+        echo -e "${LIGHTGREEN}Server ID:${GREEN}$1 ${LIGHTGREEN}Does Not Exist.${NOCOLOR}"
     fi
+    debug "Get_Running: >End<"
 }
 start_servers() {
+    debug "Start_servers: $@"    #debug
     if server_exist "$1" ; then
+        debug "Start_servers: Server_exist $1 True"    #debug
         exist="false"
         echo -e "${LIGHTGREEN}Server ID:${GREEN}$1 ${SERVER_NAME[$1]}${LIGHTGREEN}...${NOCOLOR} "
         if is_running "$1" ; then
+            debug "Start_servers: Is_Running $1 True"    #debug
             echo -e "   ${GREEN}Running!${NOCOLOR}" 
         else
-            if [ "${SERVER_ENABLED[$1]}" == "true" ]; then
+            debug "Start_servers: Is_Running $1 False"    #debug
+            if [ "${SERVER_ENABLED[$1]}" == "true" ] || [ "${SERVER_ENABLED[$1]}" == "manual" ]; then
+                debug "Start_servers: ${SERVER_NAME[$1]} = ${SERVER_ENABLED[$1]} (True/Manual)"    #debug
                 Server_Start='Y'
-            elif [ "${SERVER_ENABLED[$1]}" == "manual" ] ; then
-                if [ "$2" == "OVERRIDE" ] ; then
-                    Server_Start='Y'
-                fi
+                debug "1.Start_servers: Server_Start=$Server_Start"    #debug
             else
                 Server_Start='N'
+                debug "2.Start_servers: Server_Start=$Server_Start"    #debug
             fi
             if [ "$Server_Start" == 'Y' ] ; then
+                debug "Start_servers: If = Y: Server_Start=     $Server_Start"    #debug
                 while [ "$exist" == "false" ]; do
-                    if [ -d "$SERVER_SETTINGS/${SERVER_PATH}" ] ; then
+                    debug "Start_servers: While Exist=    $exist (True/False)"    #debug
+                    if [ -d "$SERVER_SETTINGS/${SERVER_PATH[$1]}" ] ; then
+                        debug "Start_servers: Directory Exists!     $SERVER_SETTINGS/${SERVER_PATH[$1]}"    #debug
                         if [ "${SERVER_EXTRAS[$1]}" != none ] ; then
+                            debug "Server_start: ${SERVER_NAME[$1]}-Extras=     ${SERVER_EXTRAS[$1]}"    #debug
                                                     #Run specific commands based on each server listed of the servers.cfg
                             echo -e "${LIGHTGREEN}Running Extra_Commands For ${GREEN}${SERVER_NAME[$1]}${LIGHTGREEN}.${NOCOLOR}"
                             command "cd $SERVER_SETTINGS/${SERVER_PATH[$1]} && ${SERVER_EXTRAS[$1]}"
                         fi
                                                     #Either this is the Spigot.jar or Bungeecord as listed in the servers.cfg
-                        if [ -f "$SERVER_SETTINGS/${SERVER_CORE[$1]}" ] ; then
-                            { cp "$SERVER_SETTINGS/${SERVER_CORE[$1]}" "${SERVER_SETTINGS}/${SERVER_PATH[$1]}/${SERVER_CORE[$1]}"
-                            echo -e "   ${LIGHTGREEN}Copied ${GREEN}${SERVER_CORE[$1]}${LIGHTGREEN} from ${GREEN}${SERVER_SETTINGS}${LIGHTGREEN}!${NOCOLOR}"
+                        if [ -f "$SERVER_SETTINGS/${SERVER_CORE[$1]}" ] ; then {
+                            debug "Server_Start: Server_Settings/Server_Core=True   ${SERVER_SETTINGS}/${SERVER_CORE[$1]}"    #debug
+                            cp "$SERVER_SETTINGS/${SERVER_CORE[$1]}" "${SERVER_SETTINGS}/${SERVER_PATH[$1]}/${SERVER_CORE[$1]}"
+                            echo -e "   ${LIGHTGREEN}Copied ${GREEN}${SERVER_CORE[$1]}${LIGHTGREEN} from ${GREEN}${SERVER_SETTINGS}${LIGHTGREEN}.${NOCOLOR}"
                             }
                         else {
-                                echo -e "\n${RED}ERROR! ${LIGHTGREEN}${SERVER_CORE[$1]} ${RED}Not Found!${NOCOLOR}"
-                                echo -e "${LIGHTGREEN}   Has ${YELLOW}service mcservers update spigot/minecraft/snapshot/bungee/all${LIGHTGREEN} been ran?${NOCOLOR}"
-                                echo -e "${LIGHTGREEN}   If you have recently ran ${YELLOW}update${LIGHTGREEN}, did output a different ${GREEN}filename/version${LIGHTGREEN} or ${GREEN} failed?${NOCOLOR}"
-                                echo -e "${LIGHTGREEN}   Update your ${GREEN}servers.cfg${LIGHTGREEN} in ${GREEN}${SERVER_SETTINGS}${NOCOLOR}"
+                            debug "Server_Start: Server_Settings/Server_Core=False   ${SERVER_SETTINGS}/${SERVER_CORE[$1]}"    #debug
+                            echo -e "\n${RED}ERROR! ${LIGHTGREEN}${SERVER_CORE[$1]} ${RED}Not Found!${NOCOLOR}"
+                            echo -e "${LIGHTGREEN}   Has ${YELLOW}service mcservers update spigot/minecraft/snapshot/bungee/all${LIGHTGREEN} been ran?${NOCOLOR}"
+                            echo -e "${LIGHTGREEN}   If you have recently ran ${YELLOW}update${LIGHTGREEN}, did output a different ${GREEN}filename/version${LIGHTGREEN} or ${GREEN} failed?${NOCOLOR}"
+                            echo -e "${LIGHTGREEN}   Update your ${GREEN}servers.cfg${LIGHTGREEN} in ${GREEN}${SERVER_SETTINGS}${NOCOLOR}"
                             }
                         fi
                         exist="true"
-                    else
-                        {
+                        debug "Start_servers: While Exist = $exist"    #debug
+                    else {
+                        debug "Start_servers: Directory Doesn't Exist!     $SERVER_SETTINGS/${SERVER_PATH[$1]}"    #debug
                             if [ "$2" != "skip" ] ; then
+                                debug "Start_servers: 2 != Skip:    $2"    #debug
                                 echo -e "\n${RED}ERROR! ${YELLOW}${SERVER_PATH[$1]}${LIGHTGREEN} in ${YELLOW}${SERVER_SETTINGS}${LIGHTGREEN} Doesn't Exist!${NOCOLOR}"
                                 echo -e "${LIGHTGREEN}Should ${GREEN}${SERVER_PATH[$1]}${LIGHTGREEN} be created and started?${NOCOLOR}"
                                 yes_or_no yn
+                                debug "Start_servers: Make ${SERVER_CORE[$1]}? $yn (Y/N)"    #debug
                                 case "$yn" in
                                     Y) {
-                                            echo -e "\n${LIGHTGREEN}Creating ${GREEN}${SERVER_PATH[$1]} ${LIGHTGREEN}in ${GREEN}${SERVER_SETTINGS}${LIGHTGREEN}...${NOCOLOR}"
-                                            if [ -d "$SERVER_SETTINGS" ] ; then
-                                                echo -e -n "${LIGHTGREEN} $SERVER_SETTINGS exists. Proceeding... ${NOCOLOR}"
-                                            else
-                                                mkdir "$SERVER_SETTINGS"
-                                            fi
-                                            cd "${SERVER_SETTINGS}" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} ${NOCOLOR}\n" && exit; }
-                                            mkdir "${SERVER_PATH[$1]}"
+                                        debug "Start_servers: Directory Create Case YN=Y"    #debug
+                                        echo -e "\n${LIGHTGREEN}Creating ${GREEN}${SERVER_PATH[$1]} ${LIGHTGREEN}in ${GREEN}${SERVER_SETTINGS}${LIGHTGREEN}...${NOCOLOR}"
+                                        if [ -d "$SERVER_SETTINGS" ] ; then
+                                            debug "Start_servers: Directory $SERVER_SETTINGS Exists!"    #debug
+                                            echo -e -n "${LIGHTGREEN} $SERVER_SETTINGS exists. Proceeding... ${NOCOLOR}"
+                                        else
+                                            debug "Start_servers: Directory $SERVER_SETTINGS not accessible?...Why? Checked and confirmed/created before!?!?"    #debug
+                                            exit 0      #Though checked at the beginning of the script, the server settings directory was checked for, created if not already. If it didn't create, script ended. How'd it get this far??
+                                        fi
+                                        cd "${SERVER_SETTINGS}" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} ${NOCOLOR}\n" && exit; }
+                                        debug "Start_servers: Creating Server Path= ${SERVER_PATH[$1]}"    #debug
+                                        mkdir "${SERVER_PATH[$1]}"
+                                        if [ -d "$SERVER_SETTINGS/${SERVER_PATH[$1]}" ] ; then
                                             echo -e "${LIGHTGREEN}Created.${NOCOLOR}"
+                                        else
+                                            echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS}/${SERVER_PATH[$1]}! ${NOCOLOR}\n"
+                                        fi
                                         };;
                                     N) {
-                                            echo -e "${GREEN}$SERVER_PATH[$1]${LIGHTGREEN} Not Created. ${GREEN}${SERVER_NAME[$1]}${LIGHTGREEN} cannot start without it."
+                                        debug "Start_servers: Directory Create Case YN=N"    #debug
+                                        echo -e "${GREEN}$SERVER_PATH[$1]${LIGHTGREEN} Not Created. ${GREEN}${SERVER_NAME[$1]}${LIGHTGREEN} cannot start without it."
                                         };;
                                 esac
                             fi
                         }
                     fi
                 done
-                if [ -d "$SERVER_SETTINGS" ] ; then
-                    echo -e -n "${LIGHTGREEN} $SERVER_SETTINGS exists. Proceeding... ${NOCOLOR}"
-                else
-                    mkdir "$SERVER_SETTINGS"
-                fi
                 cd "$SERVER_SETTINGS/${SERVER_PATH[$1]}" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS}/${SERVER_PATH[$1]} ${NOCOLOR}\n" && exit; }
                 command "screen -dmS ${SERVER_NAME[$1]} ${START_ARGS[$1]} -Dserver=${SERVER_NAME[$1]} ${SERVER_CORE[$1]}"
                 echo -e "   ${GREEN}Starting!${NOCOLOR}"
@@ -225,9 +375,12 @@ start_servers() {
         fi
         exist="false"
     fi
+    debug "Start_server: >End<"    #debug
 }
 stop_servers() {
+    debug "stop_servers: $@"    #debug
     if server_exist "$1" ; then
+        debug "stop_servers: server_exist $1 True (True/False)"    #debug
         echo -e -n "\n${LIGHTGREEN}To stop countdown/script entirely: ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}C${LIGHTGREEN}.${NOCOLOR}"
         i="3"
         while [ "$i" -gt 0 ]; do
@@ -237,24 +390,31 @@ stop_servers() {
         done
         echo " "
         if is_running "$1" ; then
+            debug "stop_servers: is_running $1 True (True/False)"    #debug
             echo ""
             echo -e -n "${RED}Stopping Server ${LIGHTGREEN}ID:${GREEN}$1 ${SERVER_NAME[$1]}${RED}...${NOCOLOR}"
         else
+            debug "stop_servers: is_running $1 False (True/False)"    #debug
             echo -e "${LIGHTGREEN}Server ID:${GREEN}$1 ${SERVER_NAME[$1]}${LIGHTGREEN}: ${YELLOW}Already Offline?${NOCOLOR}"
         fi
         if is_running "$1" ; then
+            debug "stop_servers: is_running $1 True (True/False)"    #debug
             i="${SHUTDOWN_SECONDS[$1]}"
+            debug "stop_servers: Shutdown_seconds $1=   ${SHUTDOWN_SECONDS[$1]seconds}"    #debug
+            debug "stop_servers: Command:    screen -rx ${SERVER_NAME[$1]} -X eval 'stuff \"${MSG_CMD[$1]} ${SHUTDOWN_MSG1[$1]}$i${SHUTDOWN_MSG2[$1]}\"\015'"    #debug
             while [ "$i" -gt 0 ]; do
                 command "screen -rx ${SERVER_NAME[$1]} -X eval 'stuff \"${MSG_CMD[$1]} ${SHUTDOWN_MSG1[$1]}$i${SHUTDOWN_MSG2[$1]}\"\015'"
                 echo -e -n "${LIGHTGREEN} ${i}s...${NOCOLOR}"
-                if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 1 ; fi
+                sleep 1
                 : $((i--))
             done
             echo -e "\n${LIGHTGREEN}   Executing ${SHUTDOWN_CMD[$1]}."
+            debug "stop_servers: Command:    screen -rx ${SERVER_NAME[$1]} -X eval 'stuff \"${SHUTDOWN_CMD[$1]}\"\015'"    #debug
             command "screen -rx ${SERVER_NAME[$1]} -X eval 'stuff \"${SHUTDOWN_CMD[$1]}\"\015'"
             if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 3 ; fi
             echo -e -n "${LIGHTGREEN}   Waiting until server is offline.${NOCOLOR}"
             i="${SHUTDOWN_MAX_WAIT[$1]}"
+            debug "stop_servers: Shutdown_Max_Wait=    ${SHUTDOWN_MAX_WAIT[$1]seconds}"    #debug
             while [ "$i" -gt 0 ]; do
                 if is_running "$1" ; then
                     echo -e -n "${LIGHTGREEN} .${NOCOLOR}"
@@ -266,99 +426,176 @@ stop_servers() {
             done
             echo -e " "
             if is_running "$1" ; then
+                debug "stop_servers: ${SERVER_NAME[$1]} still Running? >End<"    #debug
                 echo -e "${GREEN}${SERVER_NAME} ${LIGHTGREEN}has not finished shutting down after 10 seconds.${NOCOLOR}"
                 echo -e "${LIGHTGREEN}Please ${YELLOW}Wait${LIGHTGREEN} or ${YELLOW}Check${LIGHTGREEN} it's screen."
                 echo -e "${LIGHTGREEN}    Use: ${YELLOW}service mcservers screen $1${NOCOLOR}"
             fi
         fi
     fi
+    debug "Stop_servers: >End<"    #debug
 }
 restart_servers() {
+    debug "Restart_Servers: $@"    #debug
     if server_exist "$1" ; then
+        debug "Restart_Servers: Server_Exist $1 is True"    #debug
         echo -e -n "${YELLOW}Restarting ${LIGHTGREEN}Server ID:${GREEN}$1 ${SERVER_NAME[$1]}... ${NOCOLOR}"
         if is_running "$1" ; then
+            debug "Restart_Servers: Is_Running $1 is True."    #debug
             stop_servers "$1"
             if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 2 ; fi
             start_servers "$1"
         else
+            debug "Restart_Servers: Server_Exist $1 is False"    #debug
             start_servers "$1"
         fi
     fi
+    debug "Restart_servers: >End<"    #debug
 }
 update_spigot(){
-    if [ "${BUILDTOOLS_URL}" == "none"  ] ; then
-        echo -e "\n${YELLOW}Skipping... BUILDTOOLS_URL=\"none\"\n${NOCOLOR}"
-    else
+    debug "Update_Spigot: $@"    #debug
+    if [ "${BUILDTOOLS_URL}" == "none"  ] || [ "${BUILDTOOLS_URL}" == -z ] ; then
+        echo -e "\n${YELLOW}Skipping... No URL in BUILDTOOLS_URL=\n${NOCOLOR}"
+    else {
         if [ -d "$SERVER_SETTINGS/buildtools" ] ; then
-            echo -e -n "${LIGHTGREEN} $SERVER_SETTINGS/buildtools exists. Proceeding... ${NOCOLOR}"
+            debug "Update_Spigot: Directory SERVER_SETTINGS/Buildtools Exists.      ${SERVER_SETTINGS}/buildtools"    #debug
+            echo -e -n "${LIGHTGREEN} $SERVER_SETTINGS/buildtools ${GREEN}exists. Proceeding... ${NOCOLOR}\n\n"
         else
-            mkdir "$SERVER_SETTINGS/buildtools"
+            debug "Update_Spigot: Directory SERVER_SETTINGS/Buildtools Doesn't Exist!      ${SERVER_SETTINGS}/buildtools"    #debug
+            mkdir "$SERVER_SETTINGS/buildtools" || { echo -e -n "${RED}ERROR! Cannot Make Directory to ${SERVER_SETTINGS}/buildtools!${NOCOLOR}\n" && exit; }
+            echo -e -n "${LIGHTGREEN} $SERVER_SETTINGS/buildtools ${GREEN}created. Proceeding... ${NOCOLOR}\n\n"
         fi
         cd "$SERVER_SETTINGS/buildtools" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS}/buildtools!${NOCOLOR}\n" && exit; }
-        if [ "$1" == "clean" ] ; then
+        debug "Update_Spigot: Case 1=   $1."    #debug
+        case "$1" in
+            clean|Clean) {
+                cleanBuildTools="clean"
+                } ;;
+            normal|Normal) {
+                cleanBuildTools="normal"
+                } ;;
+            "") {
+                if [ "${BUILDTOOLSCLEAN}" == "clean" ] ; then
+                    cleanBuildTools="clean"
+                else
+                    cleanBuildTools="normal"
+                fi
+                };;
+        esac
+        debug "Update_Spigot: CleanBuildTools= $cleanBuildTools."    #debug
+        if [ "${cleanBuildTools}" == "clean" ] ; then
+            debug "Update_Spigot: Clean up buildtools"    #debug
             echo " "
             echo -e -n "${LIGHTGREEN}Cleaning Up in: ${NOCOLOR}"
             pwd;
-            command "find . | grep -v 'buildtools.sh' | xargs rm -rf"
+            #command "find . | grep -v 'buildtools.sh' | xargs rm -rf"      #No longer use buildtools.sh. This will be removed later...
+            command "rm -rf *"
         fi
         if [ -f "BuildTools.jar?" ] ; then
+            debug "Update_Spigot: Removing BuildTools.jar? file."    #debug
             command "rm BuildTools.jar?"
             echo " "
         fi
         if [ -f "BuildTools.jar" ] ; then
+            debug "Update_Spigot: Removing Buildtools.jar file."    #debug
             command "rm BuildTools.jar"
+            echo " "
         fi
-        echo -e -n "\n${LIGHTGREEN}Downloading Latest ${GREEN}BuildTools.jar ${LIGHTGREEN}for${GREEN} ${BUILDTOOLS_SPIGOT} ${LIGHTGREEN}Please Wait.${NOCOLOR}"
+        echo -e -n "\n${LIGHTGREEN}Downloading Latest ${GREEN}BuildTools.jar ${LIGHTGREEN}for${GREEN} Spigot ${LIGHTGREEN}Please Wait.${NOCOLOR}"
         i="3"
         while [ "$i" -gt 0 ]; do
             echo -e -n "${LIGHTGREEN} .${NOCOLOR}"
-            sleep 1
+            if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 1 ; fi
             : $((i--))
         done
         echo -e "\n${LIGHTGREEN}Downloading ${GREEN}BuildTools.jar${LIGHTGREEN}...${NOCOLOR}"
         curl "${BUILDTOOLS_URL}" -o "BuildTools.jar"
         echo -e "\n${LIGHTGREEN}Running ${GREEN}Buildtools.jar${NOCOLOR}\n"
-        HOME=$USER_DIRECTORY java -jar BuildTools.jar ${BUILDTOOLS_BUILD_VERSION}
-        #${BUILDTOOL_BUILD_VERSION}
-        echo -e "\n${LIGHTGREEN}Copying${GREEN} ${BUILDTOOLS_SPIGOT} ${LIGHTGREEN}to${GREEN} $SERVER_SETTINGS ${LIGHTGREEN}as${GREEN} ${BUILDTOOLS_OUTPUT}${LIGHTGREEN}.${NOCOLOR}"
-        if [ -f "${BUILDTOOLS_SPIGOT}" ] ; then
-            { command "cp $SERVER_SETTINGS/buildtools/${BUILDTOOLS_SPIGOT} ../${BUILDTOOLS_OUTPUT}"
-            echo -e "${GREEN}Spigot ${LIGHTGREEN}Servers will be updated upon next ${YELLOW}Start${LIGHTGREEN}/${YELLOW}Restart${LIGHTGREEN}.${NOCOLOR}"
+        debug "Update_Spigot: Variables: 0-$0 1-$1 2-$2 3-$3 4-$4\n"   #debug
+        if [ -z "$2" ] ; then
+            debug "Update_Spigot: 2=NULL"    #debug
+            if [ -z "${BUILDTOOLS_BUILD_VERSION}" ] ; then
+                debug "Update_Spigot: Buildtools_build_version=NULL"    #debug
+                debug "Update_Spigot: Home=User_Directory:    $USER_DIRECTORY"    #debug
+                debug "Update_Spigot: Command: HOME=$USER_DIRECTORY java -jar BuildTools.jar"    #debug
+                HOME="$USER_DIRECTORY" java -jar BuildTools.jar
+            else
+                debug "Update_Spigot: Home=User_Directory:    $USER_DIRECTORY"    #debug
+                debug "Update_Spigot: Buildtools_build_version=$BUILDTOOLS_BUILD_VERSION"    #debug
+                debug "Update_Spigot: Command: HOME=$USER_DIRECTORY java -jar BuildTools.jar --rev ${BUILDTOOLS_BUILD_VERSION}"    #debug
+                HOME="$USER_DIRECTORY" java -jar BuildTools.jar --rev "${BUILDTOOLS_BUILD_VERSION}"
+            fi
+            echo -e "\n${LIGHTGREEN}Copying${GREEN} Spigot ${LIGHTGREEN}to${GREEN} $SERVER_SETTINGS ${LIGHTGREEN}as${GREEN} ${BUILDTOOLS_OUTPUT} ${LIGHTGREEN}.${NOCOLOR}" 
+        else 
+            debug "Update_Spigot: Home=User_Directory:  $USER_DIRECTORY"    #debug
+            debug "Update_Spigot: 2=$2."    #debug
+            debug "Update_Spigot: Command: HOME=$USER_DIRECTORY java -jar BuildTools.jar --rev $2"    #debug
+            HOME="$USER_DIRECTORY" java -jar BuildTools.jar --rev "$2" 
+            echo -e "\n${LIGHTGREEN}Copying${GREEN} Spigot-$2.jar ${LIGHTGREEN}to${GREEN} $SERVER_SETTINGS ${LIGHTGREEN}as${GREEN} ${BUILDTOOLS_CUS_OUTPUT}$2.jar${LIGHTGREEN}.${NOCOLOR}" 
+        fi
+        debug "Update_Spigot: Command: ls ${SERVER_SETTINGS}/buildtools/spigot-* 1> /dev/null 2>&1"    #debug
+        if ls "${SERVER_SETTINGS}"/buildtools/spigot-* 1> /dev/null 2>&1; then
+            { 
+                debug "Update_Spigot: Variable: ${SERVER_SETTINGS}/buildtools/spigot-$2.jar\n"  #debug
+                if [ -z "$2" ] || [ "$2" == "latest" ] ; then
+                    debug "Update_Spigot: 2=NULL/latest"    #debug
+                    debug "Update_Spigot: Command: ls ${SERVER_SETTINGS}/buildtools/$BUILDTOOLS_OUTPUT* 1> /dev/null 2>&1"    #debug
+                    if ls "${SERVER_SETTINGS}"/buildtools/"$BUILDTOOLS_OUTPUT"* 1> /dev/null 2>&1; then
+                        debug "Update_Spigot: Command: cp $(ls -t $SERVER_SETTINGS/buildtools/$BUILDTOOLS_OUTPUT*.jar | head -1) ../${SPIGOT_LATEST}.jar"    #debug
+                        command "cp $(ls -t $SERVER_SETTINGS/buildtools/$BUILDTOOLS_OUTPUT*.jar | head -1) ../${SPIGOT_LATEST}.jar"
+                    else
+                        echo -e "\n${RED}ERROR! ${GREEN}Spigot.jar File ${RED}Not Found!${NOCOLOR}"
+                    fi
+                else
+                    debug "Update_Spigot: True=     ${SERVER_SETTINGS}/buildtools/spigot-$2.jar"    #debug
+                    if [ -f "${SERVER_SETTINGS}/buildtools/spigot-$2.jar" ] ; then
+                        debug "Update_Spigot: Command: cp $SERVER_SETTINGS/buildtools/$BUILDTOOLS_OUTPUT$2.jar ../${BUILDTOOLS_CUS_OUTPUT}$2.jar"    #debug
+                        command "cp $SERVER_SETTINGS/buildtools/$BUILDTOOLS_OUTPUT$2.jar ../${BUILDTOOLS_CUS_OUTPUT}$2.jar"
+                    else
+                        echo -e "\n${RED}ERROR! ${GREEN}Spigot-$2.jar File ${RED}Not Found!${NOCOLOR}"
+                    fi
+                fi
+                echo -e "${GREEN}Spigot ${LIGHTGREEN}Servers will be updated upon next ${YELLOW}Start${LIGHTGREEN}/${YELLOW}Restart${LIGHTGREEN}.${NOCOLOR}"
             }
         else {
-            echo -e "\n${RED}ERROR! ${GREEN}${BUILDTOOLS_SPIGOT} ${RED}Not Found!${NOCOLOR}"
-            echo -e "${LIGHTGREEN}   Did ${GREEN}BuildTools.jar${LIGHTGREEN} output a different ${GREEN}filename/version${LIGHTGREEN}?${NOCOLOR}"
-            echo -e "${LIGHTGREEN}   If so, update your ${GREEN}servers.cfg${LIGHTGREEN} in ${GREEN}${SERVER_SETTINGS}${NOCOLOR}"
-            echo -e "${LIGHTGREEN}     with ${GREEN}BUILDTOOLS_SPIGOT=\"CoreFileName.jar\" ${LIGHTGREEN}from ${GREEN}${SERVER_SETTINGS}/buildtools${LIGHTGREEN}.${NOCOLOR}"
-            }
-        fi
+            echo -e "\n${RED}ERROR! ${GREEN}Spigot File(s) ${RED}Not Found!${NOCOLOR}"
+            echo -e "${LIGHTGREEN}   Did ${GREEN}BuildTools.jar${LIGHTGREEN} output a different ${GREEN}filename/version${LIGHTGREEN} than expected?${NOCOLOR}"
+            echo -e "${LIGHTGREEN}   Or no file created due to build failure?${NOCOLOR}"
+            } ;
+        fi 
+        } ;
     fi
+    debug "Update_Spigot: >End<"    #debug
 }
 update_minecraft(){
-    if [ "${MINECECRAFT_SERVER_URL}" == "none"  ] ; then
-        echo -e "\n${YELLOW}Skipping... MINECECRAFT_SERVER_URL=\"none\"\n${NOCOLOR}"
-        exit
+    debug "Update_Minecraft: $@"    #debug
+    if [ "${MINECRAFT_SERVER_URL}" == "none" ] || [ "${MINECRAFT_SERVER_URL}" == -z ]; then
+        echo -e "\n${YELLOW}Skipping... MINECRAFT_SERVER_URL=\"none\"\n${NOCOLOR}"
     else
-        echo -e -n "${LIGHTGREEN}Deleting Old ${GREEN}${MINECRAFT_SERVER}${LIGHTGREEN}...${NOCOLOR}"
+        debug "Update_Minecraft: Minecraft_Server_URL=${MINECRAFT_SERVER_URL}"    #debug
+        echo -e -n "${LIGHTGREEN}Deleting Old ${GREEN}${MINECRAFT_SERVER}.jar${LIGHTGREEN}...${NOCOLOR}"
         if [ -d "$SERVER_SETTINGS" ] ; then
             echo -e -n "${LIGHTGREEN} $SERVER_SETTINGS exists. Proceeding... ${NOCOLOR}"
         else
-            mkdir "$SERVER_SETTINGS"
+            debug "Update_Minecraft: Directory $SERVER_SETTINGS not accessible?...Why? Checked and confirmed/created before!?!?"    #debug
+            exit 0      #Though checked at the beginning of the script, the server settings directory was checked for, created if not already. If it didn't create, script ended. How'd it get this far??
         fi
         cd "$SERVER_SETTINGS" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} ${NOCOLOR}\n" && exit; }
         pwd;
-        if [ -f "${MINECRAFT_SERVER}" ] ; then
-            { rm "${MINECRAFT_SERVER}"
+        if [ -f "${MINECRAFT_SERVER}.jar" ] ; then
+            {
+            rm "${MINECRAFT_SERVER}.jar"
             echo -e "${LIGHTGREEN} Deleted!${NOCOLOR}"
             }
         else { echo -e "${LIGHTGREEN} None Detected.${NOCOLOR}"
             }
         fi
-        if [ -f "${MINECRAFT_SERVER}?" ] ; then
-            command "rm ${MINECRAFT_SERVER}?"
+        if [ -f "${MINECRAFT_SERVER}.jar?" ] ; then
+            debug "Update_Minecraft: Removing ${MINECRAFT_SERVER}.jar? file."    #debug
+            command "rm ${MINECRAFT_SERVER}.jar?"
             echo " "
         fi
-        echo -e -n "\n${LIGHTGREEN}Downloading Latest ${GREEN}${MINECRAFT_SERVER} ${LIGHTGREEN}From Minecraft.net. Please Wait.${NOCOLOR}"
+        echo -e -n "\n${LIGHTGREEN}Downloading Latest ${GREEN}${MINECRAFT_SERVER}.jar ${LIGHTGREEN}From Minecraft.net. Please Wait.${NOCOLOR}"
         i="3"
         while [ "$i" -gt 0 ]; do
             echo -e -n "${LIGHTGREEN} .${NOCOLOR}"
@@ -366,43 +603,49 @@ update_minecraft(){
             : $((i--))
         done
         echo -e "\n"
-        curl "${MINECRAFT_SERVER_URL}" -o "${MINECRAFT_SERVER}"
-        if [ -f "${MINECRAFT_SERVER}" ] ; then
+        debug "Update_Minecraft: Command: curl ${MINECRAFT_SERVER_URL} -o ${MINECRAFT_SERVER}.jar"    #debug
+        curl "${MINECRAFT_SERVER_URL}" -o "${MINECRAFT_SERVER}.jar"
+        if [ -f "${MINECRAFT_SERVER}.jar" ] ; then
             { echo -e "\n${GREEN}Vanilla Minecraft ${LIGHTGREEN}Servers will be updated upon next ${YELLOW}Start${LIGHTGREEN}/${YELLOW}Restart${LIGHTGREEN}.${NOCOLOR}"
             }
         else {
-            echo -e "\n${RED}ERROR! ${GREEN}${MINECRAFT_SERVER} ${RED}Not Found!${NOCOLOR}"
+            echo -e "\n${RED}ERROR! ${GREEN}${MINECRAFT_SERVER}.jar ${RED}Not Found!${NOCOLOR}"
             echo -e "${LIGHTGREEN}   Did the download of the ${GREEN}${MINECRAFT_SERVER_URL}${RED} Fail?${NOCOLOR}"
             echo -e "${LIGHTGREEN}   If so, update your ${GREEN}servers.cfg${LIGHTGREEN} in ${GREEN}${SERVER_SETTINGS}${NOCOLOR}"
             echo -e "${LIGHTGREEN}     with ${GREEN}MINECRAFT_SERVER_URL=\"URL-To-CoreFileName.jar\" ${LIGHTGREEN}from ${GREEN}Minecraft.net/download${LIGHTGREEN}.${NOCOLOR}"
             }
         fi
     fi
+    debug "Update_Minecraft: >End<"    #debug
 }
 update_snapshot(){
-    if [ "${MINECRAFT_SNAPSHOT_URL}" == "none" ] ; then
-        echo -e "\n${YELLOW}Skipping... MINECECRAFT_SNAPSHOT_URL=\"none\"\n${NOCOLOR}"
+    debug "Update_Snapshot: $@"    #debug
+    if [ "${MINECRAFT_SNAPSHOT_URL}" == "none" ] || [ "${MINECRAFT_SNAPSHOT_URL}" == -z ] ; then
+        echo -e "\n${YELLOW}Skipping... MINECRAFT_SNAPSHOT_URL=\"none\"\n${NOCOLOR}"
     else
+        debug "Update_Snapshot: Minecraft_Snapshot_URL= ${MINECRAFT_SNAPSHOT_URL}"    #debug
         echo -e -n "${LIGHTGREEN}Deleting Old ${GREEN}${MINECRAFT_SNAPSHOT}${LIGHTGREEN}... ${NOCOLOR}"
         if [ -d "$SERVER_SETTINGS" ] ; then
             echo -e -n "${LIGHTGREEN} $SERVER_SETTINGS exists. Proceeding... ${NOCOLOR}"
         else
-            mkdir "$SERVER_SETTINGS"
+            debug "Update_Snapshot: Directory $SERVER_SETTINGS not accessible?...Why? Checked and confirmed/created before!?!?"    #debug
+            exit 0      #Though checked at the beginning of the script, the server settings directory was checked for, created if not already. If it didn't create, script ended. How'd it get this far??
         fi
         cd "$SERVER_SETTINGS" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} ${NOCOLOR}\n" && exit; }
         pwd;
-        if [ -f "${MINECRAFT_SNAPSHOT}" ] ; then
-            { rm "${MINECRAFT_SNAPSHOT}"
+        if [ -f "${MINECRAFT_SNAPSHOT}.jar" ] ; then
+            { rm "${MINECRAFT_SNAPSHOT}.jar"
             echo -e "${LIGHTGREEN} Deleted."
             }
         else { echo -e "${LIGHTGREEN} None Detected."
             }
         fi
-        if [ -f "${MINECRAFT_SNAPSHOT}?" ] ; then
-            command "rm ${MINECRAFT_SNAPSHOT}?"
+        if [ -f "${MINECRAFT_SNAPSHOT}.jar?" ] ; then
+            debug "Update_Snapshot: Removing ${MINECRAFT_SNAPSHOT}.jar"    #debug
+            command "rm ${MINECRAFT_SNAPSHOT}.jar?"
             echo " "
         fi
-        echo -e -n "\n${LIGHTGREEN}Downloading Latest ${GREEN}${MINECRAFT_SNAPSHOT} ${LIGHTGREEN}From Minecraft.net. Please Wait.${NOCOLOR}"
+        echo -e -n "\n${LIGHTGREEN}Downloading Latest ${GREEN}${MINECRAFT_SNAPSHOT}.jar ${LIGHTGREEN}From Minecraft.net. Please Wait.${NOCOLOR}"
         i="3"
         while [ "$i" -gt 0 ]; do
             echo -e -n "${LIGHTGREEN} .${NOCOLOR}"
@@ -410,28 +653,32 @@ update_snapshot(){
             : $((i--))
         done
         echo -e "\n"
-        curl "${MINECRAFT_SNAPSHOT_URL}" -o "${MINECRAFT_SNAPSHOT}"
-        if [ -f "${MINECRAFT_SNAPSHOT}" ] ; then
+        debug "Update_Snapshot: Command: curl ${MINECRAFT_SNAPSHOT_URL} -o ${MINECRAFT_SNAPSHOT}.jar"    #debug
+        curl "${MINECRAFT_SNAPSHOT_URL}" -o "${MINECRAFT_SNAPSHOT}.jar"
+        if [ -f "${MINECRAFT_SNAPSHOT}.jar" ] ; then
             { echo -e "\n${GREEN}Minecraft Snapshot ${LIGHTGREEN}Servers will be updated upon next ${YELLOW}Start${LIGHTGREEN}/${YELLOW}Restart${LIGHTGREEN}.${NOCOLOR}"
             }
         else {
-            echo -e "\n${RED}ERROR! ${GREEN}${MINECRAFT_SNAPSHOT} ${RED}Not Found!${NOCOLOR}"
+            echo -e "\n${RED}ERROR! ${GREEN}${MINECRAFT_SNAPSHOT}.jar ${RED}Not Found!${NOCOLOR}"
             echo -e "${LIGHTGREEN}   Did the download of the ${GREEN}${MINECRAFT_SNAPSHOT_URL}${RED} Fail?${NOCOLOR}"
             echo -e "${LIGHTGREEN}   If so, update your ${GREEN}servers.cfg${LIGHTGREEN} in ${GREEN}${SERVER_SETTINGS}${NOCOLOR}"
             echo -e "${LIGHTGREEN}     with ${GREEN}MINECRAFT_SNAPSHOT_URL=\"URL-To-CoreFileName.jar\"${LIGHTGREEN}.${NOCOLOR}"
             }
         fi
     fi
+    debug "Update_Snapshot: >End<"    #debug
 }
 update_bungee(){
-    if [ "${BUNGEECORD_URL}" == "none" ] ; then
+    debug "Update_Bungee: $@"    #debug
+    if [ "${BUNGEECORD_URL}" == "none" ] || [ "${BUNGEECORD_URL}" == -z ] ; then
         echo -e "\n${YELLOW}Skipping... BUNGEECORD_URL=\"none\"\n${NOCOLOR}"
     else
         echo -e -n "${LIGHTGREEN}Deleting Old ${GREEN}${BUNGEECORD}... ${NOCOLOR}"
         if [ -d "$SERVER_SETTINGS" ] ; then
             echo -e -n "${LIGHTGREEN} $SERVER_SETTINGS exists. Proceeding... ${NOCOLOR}"
         else
-            mkdir "$SERVER_SETTINGS"
+            debug "Update_Bungee: Directory $SERVER_SETTINGS not accessible?...Why? Checked and confirmed/created before!?!?"    #debug
+            exit 0      #Though checked at the beginning of the script, the server settings directory was checked for, created if not already. If it didn't create, script ended. How'd it get this far??
         fi
         cd "$SERVER_SETTINGS" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} ${NOCOLOR}\n" && exit; }
         pwd;
@@ -443,6 +690,7 @@ update_bungee(){
             }
         fi
         if [ -f "${BUNGEECORD}?" ] ; then
+            debug "Update_Bungee: Removing ${BUNGEECORD}.jar? file."    #debug
             command "rm ${BUNGEECORD}?"
             echo " "
         fi
@@ -454,7 +702,8 @@ update_bungee(){
             : $((i--))
         done
         echo -e "\n"
-        curl "${BUNGEECORD_URL}" -o "${BUNGEECORD}"
+        debug "Update_Bungee: Command: curl ${BUNGEECORD_URL} -o ${BUNGEECORD}.jar"    #debug
+        curl "${BUNGEECORD_URL}" -o "${BUNGEECORD}.jar"
         if [ -f "${BUNGEECORD}" ] ; then
             { echo -e "\n${GREEN}${BUNGEECORD}${LIGHTGREEN} Servers will be updated upon next ${YELLOW}Start${LIGHTGREEN}/${YELLOW}Restart${LIGHTGREEN}.${NOCOLOR}"
             }
@@ -466,9 +715,12 @@ update_bungee(){
             }
         fi
     fi
+    debug "Update_Bungee: >End<"    #debug
 }
 show_screens(){
-    if [ "${SHOW_SCREENS}" == "True" ] || [ "${SHOW_SCREENS}" == "true" ] || [ "${SHOW_SCREENS}" == "TRUE" ]; then {
+    debug "Show_Screens: $@"    #debug
+    debug "Show_Screens: Show_Screens= $SHOW_SCREENS    (True/False)"    #debug
+    if [[ "${SHOW_SCREENS}" =~ ^(True|true|TRUE)$ ]]; then {
         command "screen -ls"
         echo -e "\n   ${LIGHTGREEN}Access Screen: ${YELLOW}service mcservers screen ID#${LIGHTGREEN}.${NOCOLOR}"
         echo -e "   ${LIGHTGREEN}If a \"${YELLOW}Starting!${LIGHTGREEN}\" server isn't listed, it's offline."
@@ -476,12 +728,16 @@ show_screens(){
         echo -e "       ${YELLOW}service mcservers view log ID#${LIGHTGREEN}.${NOCOLOR}"
         }
     fi
+    debug "Show_Screens: >End<"    #debug
 }
 yes_or_no(){
+    debug "Yes_or_No: $@"    #debug
+    debug "Yes_or_No: Exist=$exist"    #debug
     while [[ "$exist" != [yYnN] ]]
     do
         echo -e -n "${LIGHTGREEN}(${YELLOW}Y${LIGHTGREEN})es or (${YELLOW}N${LIGHTGREEN})o: ${NOCOLOR}"
         read -r -s -n1 exist
+        debug "Yes_or_No: User Input Exist=$exist"    #debug
         case "$exist" in
             "y"|"Y") { eval "$1"="Y"
                 };;
@@ -493,25 +749,32 @@ yes_or_no(){
         esac
     done
     echo -e "\n"
+    debug "Yes_or_No: >End<"    #debug
 }
 server_exist(){
-    if [ "$SERVER_NAME[$1]" == "" ] ; then
+    debug "Server_Exist: $@"    #debug
+    debug "Server_Exist: Server_Name=   ${SERVER_NAME[$1]}."    #debug
+    if [ "${SERVER_NAME[$1]}" == -z ] ; then
         echo -e "\n${LIGHTGREEN}$1${YELLOW} Does Not Exist!"
         return 1
+        debug "Server_Exist: Return 1"    #debug
     else
         return 0
+        debug "Server_Exist: Return 0"    #debug
     fi
+    debug "Server_Exist: >End<"    #debug
 }
 not_a_number(){
     echo -e "\n${LIGHTGREEN}Server ID ${RED}Must Be A Number!${NOCOLOR}"
 }
 commandsyml_template(){
+    debug "Commandsyml_Template:"    #debug
     echo -e "\n${YELLOW}Creating commands.yml Template in ${SERVER_SETTINGS}/commandsTEMPLATE.yml${NOCOLOR}"
     if [ -f "$SERVER_SETTINGS/commandsTEMPLATE.yml" ] ; then
         echo -e "${YELLOW}CAUTION!${GREEN} commandsTEMPLATE.yml${LIGHTGREEN} Already Exists!${NOCOLOR}"
         echo -e "${LIGHTGREEN}Do you wish to overwrite it?"
-        rm "${SERVER_SETTINGS}/commandsTEMPLATE.yml"
         yes_or_no yn
+        debug "Commandsyml_Template: User Input YN=${yn} (Y/N)"    #debug
     else
         yn="Y"
     fi
@@ -520,9 +783,14 @@ commandsyml_template(){
             if [ -d "$SERVER_SETTINGS" ] ; then
                 echo -e -n "${LIGHTGREEN} $SERVER_SETTINGS exists. Proceeding... ${NOCOLOR}"
             else
-                mkdir "$SERVER_SETTINGS"
+                debug "Update_Bungee: Directory $SERVER_SETTINGS not accessible?...Why? Checked and confirmed/created before!?!?"    #debug
+                exit 0      #Though checked at the beginning of the script, the server settings directory was checked for, created if not already. If it didn't create, script ended. How'd it get this far??
             fi
             cd "$SERVER_SETTINGS" ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} ${NOCOLOR}\n" && exit; }
+            if [ -f "$SERVER_SETTINGS/commandsTEMPLATE.yml" ] ; then 
+                debug "Commandsyml_Template: Removing ${SERVER_SETTINGS}/commandsTEMPLATE.yml"    #debug
+                rm "${SERVER_SETTINGS}/commandsTEMPLATE.yml"
+            fi
                 {
                     echo "# This is the commands configuration file for Bukkit."
                     echo "# For documentation on how to make use of this file, check out the Bukkit Wiki at"
@@ -587,14 +855,16 @@ commandsyml_template(){
             echo -e "\n${GREEN}commandsTEMPLATE.tml ${LIGHTGREEN}has not be altered.${NOCOLOR}"
         };;
     esac
+    debug "Commandsyml_Template: >End<"    #debug
 }
 spigotyml_template(){
+    debug "Spigotyml_Template: $@"    #debug
     echo -e "\n${YELLOW}Creating spigot.yml Template in ${SERVER_SETTINGS}/spigotTEMPLATE.yml${NOCOLOR}"
     if [ -f "$SERVER_SETTINGS/spigotTEMPLATE.yml" ] ; then
         echo -e "${YELLOW}CAUTION!${GREEN} spigotTEMPLATE.yml${LIGHTGREEN} Already Exists!${NOCOLOR}"
         echo -e "${LIGHTGREEN}Do you wish to overwrite it?"
-        rm "${SERVER_SETTINGS}/spigotTEMPLATE.yml"
         yes_or_no yn
+        debug "Spigotsyml_Template: User Input YN=${yn} (Y/N)"    #debug
     else
         yn="Y"
     fi
@@ -603,7 +873,12 @@ spigotyml_template(){
             if [ -d "$SERVER_SETTINGS" ] ; then
                 echo -e -n "${LIGHTGREEN} $SERVER_SETTINGS exists. Proceeding... ${NOCOLOR}"
             else
-                mkdir "$SERVER_SETTINGS"
+                debug "Update_Bungee: Directory $SERVER_SETTINGS not accessible?...Why? Checked and confirmed/created before!?!?"    #debug
+                exit 0      #Though checked at the beginning of the script, the server settings directory was checked for, created if not already. If it didn't create, script ended. How'd it get this far??
+            fi
+            if [ -f "$SERVER_SETTINGS/spigotymlTEMPLATE.yml" ] ; then 
+                debug "Spigotyml_Template: Removing ${SERVER_SETTINGS}/SpigotTEMPLATE.yml"    #debug
+                rm "${SERVER_SETTINGS}/spigotTEMPLATE.yml"
             fi
             cd "$SERVER_SETTINGS" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} ${NOCOLOR}\n" && exit; }
                 {
@@ -751,6 +1026,7 @@ spigotyml_template(){
             echo -e "\n${GREEN}spigotTEMPLATE.tml ${LIGHTGREEN}has not be altered.${NOCOLOR}"
         };;
     esac
+    debug "Spigotyml_Template: >End<"    #debug
 }
 #helpyml_template(){              #At this time, I have no information to go off of for a decent help setup. Leaving off script until then.
 #    echo -e "\n${YELLOW}Creating help.yml Template in ${SERVER_SETTINGS}/helpTEMPLATE.yml${NOCOLOR}"
@@ -781,12 +1057,13 @@ spigotyml_template(){
 #    esac
 #}
 bukkityml_template(){
+    debug "Bukkityml_Template:"    #debug
     echo -e "\n${YELLOW}Creating bukkit.yml Template in ${SERVER_SETTINGS}/bukkitTEMPLATE.yml${NOCOLOR}"
     if [ -f "$SERVER_SETTINGS/bukkitTEMPLATE.yml" ] ; then
         echo -e "${YELLOW}CAUTION!${GREEN} bukkitTEMPLATE.yml${LIGHTGREEN} Already Exists!${NOCOLOR}"
         echo -e "${LIGHTGREEN}Do you wish to overwrite it?"
-        rm "${SERVER_SETTINGS}/bukkitTEMPLATE.yml"
         yes_or_no yn
+        debug "Bukkityml_Template: User Input YN=${yn} (Y/N)"    #debug
     else
         yn="Y"
     fi
@@ -795,9 +1072,14 @@ bukkityml_template(){
             if [ -d "$SERVER_SETTINGS" ] ; then
                 echo -e -n "${LIGHTGREEN} $SERVER_SETTINGS exists. Proceeding... ${NOCOLOR}"
             else
-                mkdir "$SERVER_SETTINGS"
+                debug "Update_Bungee: Directory $SERVER_SETTINGS not accessible?...Why? Checked and confirmed/created before!?!?"    #debug
+                exit 0      #Though checked at the beginning of the script, the server settings directory was checked for, created if not already. If it didn't create, script ended. How'd it get this far??
             fi
-            cd "$SERVER_SETTINGS" ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} ${NOCOLOR}\n" && exit; }
+            if [ -f "$SERVER_SETTINGS/bukkitTEMPLATE.yml" ] ; then 
+                debug "Bukkityml_Template: Removing ${SERVER_SETTINGS}/BukkitTEMPLATE.yml"    #debug
+                rm "${SERVER_SETTINGS}/bukkitTEMPLATE.yml"
+            fi
+            cd "$SERVER_SETTINGS" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} ${NOCOLOR}\n" && exit; }
                 {
                     echo "# This is the main configuration file for Bukkit."
                     echo "# As you can see, theres actually not that much to configure without any plugins."
@@ -853,14 +1135,16 @@ bukkityml_template(){
             echo -e "\n${GREEN}bukkitTEMPLATE.tml ${LIGHTGREEN}has not be altered.${NOCOLOR}"
         };;
     esac
+    debug "Bukkityml_Template: >End<"    #debug
 }
 serverproperties_template(){
+    debug "Serverproperties_Template:"    #debug
     echo -e "\n${YELLOW}Creating server.properties Template in ${SERVER_SETTINGS}/serverTEMPLATE.properties${NOCOLOR}"
     if [ -f "$SERVER_SETTINGS/serverTEMPLATE.properties" ] ; then
         echo -e "${YELLOW}CAUTION!${GREEN} serverTEMPLATE.properties${LIGHTGREEN} Already Exists!${NOCOLOR}"
         echo -e "${LIGHTGREEN}Do you wish to overwrite it?"
-        rm "${SERVER_SETTINGS}/serverTEMPLATE.properties"
         yes_or_no yn
+        debug "Serverproperties_Template: User Input YN=${yn} (Y/N)"    #debug
     else
         yn="Y"
     fi
@@ -869,9 +1153,14 @@ serverproperties_template(){
             if [ -d "$SERVER_SETTINGS" ] ; then
                 echo -e -n "${LIGHTGREEN} $SERVER_SETTINGS exists. Proceeding... ${NOCOLOR}"
             else
-                mkdir "$SERVER_SETTINGS"
+                debug "Update_Bungee: Directory $SERVER_SETTINGS not accessible?...Why? Checked and confirmed/created before!?!?"    #debug
+                exit 0      #Though checked at the beginning of the script, the server settings directory was checked for, created if not already. If it didn't create, script ended. How'd it get this far??
             fi
             cd "$SERVER_SETTINGS" ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} ${NOCOLOR}\n" && exit; }
+            if [ -f "$SERVER_SETTINGS/serverTEMPLATE.properties" ] ; then 
+                debug "Commandsyml_Template: Removing ${SERVER_SETTINGS}/commandsTEMPLATE.yml"    #debug
+                rm "${SERVER_SETTINGS}/serverTEMPLATE.properties"
+            fi
                 {
                     echo "#All variables listed are explained at: http://minecraft.gamepedia.com/Server.properties"
                     echo "#Minecraft server properties"
@@ -923,426 +1212,615 @@ serverproperties_template(){
             echo -e "\n${GREEN}serverTEMPLATE.properties ${LIGHTGREEN}has not be altered.${NOCOLOR}"
         };;
     esac
+    debug "Serverproperties_Template: >End<"    #debug
 }
-
+serverscfg_configuring(){
+    debug "Serverscfg_Configuring: $@"    #debug
+    variabletoChange="$1"
+        debug "Serverscfg_Configuring: VariableToChange=$variabletoChange."    #debug
+    variabletoHave="$2"
+        debug "Serverscfg_Configuring: VariableToHave=$variabletoHave."    #debug
+    extrajunk="$3"
+        debug "Serverscfg_Configuring: ExtraJunk=$extrajunk."    #debug
+    if [ -z "$variabletoHave" ] ; then
+        debug "Serverscfg_Configuring: VariableToHave=NULL"    #debug
+        echo -e "${LIGHTGREEN}    Current: ${GREEN}$variabletoChange${LIGHTGREEN}=${GREEN}${!variabletoChange}${NOCOLOR}"
+    elif [ -z "$extrajunk" ] ; then
+        debug "Serverscfg_Configuring: ExtraJunk=NULL"    #debug
+        newvariable=s#"$variabletoChange"=.*#"$variabletoChange"=\""$variabletoHave"\"#
+        debug "Serverscfg_Configuring: NewVariable=     $newvariable"    #debug
+        echo -e "${LIGHTGREEN}    Current: ${GREEN}$variabletoChange${LIGHTGREEN}=${GREEN}${!variabletoChange}${NOCOLOR}"
+        debug "Serverscfg_Configuring: Command:     sed -i ${newvariable} ${SERVER_SETTINGS}/servers.cfg"    #debug
+        sed -i "${newvariable}" "${SERVER_SETTINGS}/servers.cfg"
+        echo -e "${LIGHTGREEN}    Now:     ${GREEN}$variabletoChange${LIGHTGREEN}=${GREEN}$variabletoHave${NOCOLOR}"
+    else
+        echo -e "\n${RED}ERROR! ${LIGHTGREEN}Variable limit reached!${NOCOLOR}"
+        echo -e "${LIGHTGREEN}    This variable takes one unbroken input. URLs do not have spaces. Otherwise use Double Quotes${NOCOLOR}"
+        echo -e "${LIGHTGREEN}    Example: ${GREEN}service mcservers variable config-variable-x www.example.com/who/knows/what.jar${NOCOLOR}"
+        echo -e "${LIGHTGREEN}    Example: ${GREEN}service mcservers variable 11 none${NOCOLOR}"
+        echo -e "${LIGHTGREEN}    Example: ${GREEN}service mcservers variable config-variable-x \"string with spaces\"${NOCOLOR}"
+    fi
+    debug "Serverscfg_Configuring: >End<"    #debug
+}
 # Service Start Arguments
-SERVERS=${#SERVER_NAME[@]}
+SERVERS="${#SERVER_NAME[@]}"
+debug "Servers= $SERVERS"    #Debug
+debug "User Input Main Case: $@."    #debug
 case "$1" in
     start){     #Until I find a better way to have start/stop the server upon system start/stop, going to the basics.
+        debug "Main Case: Start: - Starting All Servers. \"Service MCServers Start\", Does not include Server before Start."    #debug
+        debug "Main Case: Start: $@."    #debug
         for (( i = 0; i < $SERVERS; i++ )) ; do
+            debug "Main Case: Start $i"    #debug
             start_servers $i skip
             if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 2 ; fi
         done
+        debug "Main Case: Start >End<"    #debug
     };;
     stop){      #Until I find a better way to have start/stop the server upon system start/stop, going to the basics.
+        debug "Main Case: Stop: - Stopping All Servers. \"Service MCServers Stop\", Does not include Server before Stop."    #debug
+        debug "Main Case: Stop: $@."    #debug
         for (( i = 0; i < $SERVERS; i++ )) ; do
+            debug "Main Case: Stop $i"    #debug
             stop_servers $i
             if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 5 ; fi
         done
+        debug "Main Case: Stop >End<"    #debug
     };;
     screen){ 
+        debug "Main Case: Screen: $@."    #debug
+        debug "Main Case: Screen: 2-$2."    #debug
         if [[ "$2" =~ ^[0-9]+$ ]] ; then
+            debug "Main Case: Screen: 2 is a number!"    #debug
             if server_exist "$2" ; then
+                debug "Main Case: Screen: Server_Exist $2 = True! (True/False)"    #debug
                 if is_running "$2" ; then
+                    debug "Main Case: Screen: Is Running $2 = True! (True/False)"    #debug
+                    debug "Main Case: Screen: Case 3-$3"    #debug
                     case "$3" in
                     kill|Kill) {
+                        debug "Main Case: Screen: Kill: 4-$4"    #debug
                         if [ "$4" != "Y" ] && [ "$4" != "y" ] ; then
+                            debug "Main Case: Screen: Kill: 4=Not Y/y."    #debug
                             echo -e "\n${RED}Are you sure you want to kill &{YELLOW}${SERVER_NAME[$2]}${RED}?${NOCOLOR}"
                             yes_or_no yn
+                            debug "Main Case: Screen: Kill: User Input YN=$yn."    #debug
                             echo " "
                         else
                             yn=Y
                         fi
-                        yes_or_no yn
+                        debug "Main Case: Screen: Kill: YN=$yn"    #debug
                         case "$yn" in
                             Y)  { 
+                                    debug "Main Case: Screen: Kill: CaseYN: YES."    #debug
+                                    debug "Main Case: Screen: Kill: CaseYN: Command: screen -XS ${SERVER_NAME[$2]} kill"    #debug
                                     command "screen -XS ${SERVER_NAME[$2]} kill"
                                     echo -e "${GREEN}${SERVER_NAME[$2]} ${LIGHTGREEN}Has Been ${YELLOW}Killed${NOCOLOR}"
                                 };;
-                            N) { echo -e "\n${GREEN}${SERVER_NAME[$2]} ${LIGHTGREEN} Will live another millisecond.${NOCOLOR}" #I really need to find something else to say here...
+                            N|*) { 
+                                    debug "Main Case: Screen: Kill: CaseYN: NO."    #debug
+                                    echo -e "\n${GREEN}${SERVER_NAME[$2]} ${LIGHTGREEN} Will live another millisecond.${NOCOLOR}" #I really need to find something else to say here...
+                                };;
+                            *){
+                                    debug "Main Case: Screen: Kill: CaseYN=...How'd you get here?? $@"    #debug
                                 };;
                         esac
+                        debug "Main Case: Screen: Kill: >End<"    #debug
                     };;
                     send|Send) {
-                        if [ "$4" != "" ] ; then
+                    debug "Main Case: Screen: Send: "    #debug
+                        if [ "$4" != -z ] ; then
                             {
-                                                                     #"-X eval 'stuff \"save-all\"\015'"
+                                debug "Main Case: Screen: Send: 4=${*:4}"    #debug
+                                debug "Main Case: Screen: Send: Command: screen -rx ${SERVER_NAME[$2]} -X eval 'stuff \"${*:4}\"\015'"    #debug
                                 command "screen -rx ${SERVER_NAME[$2]} -X eval 'stuff \"${*:4}\"\015'"
                                 echo -e "${LIGHTGREEN}  Command Sent to server.${NOCOLOR}"
                             }
                         else
                             {
-                             echo -e "\n${LIGHTGREEN}Input any command and text after ${YELLOW}SEND${LIGHTGREEN} to send a command to select server screen.${NOCOLOR}"
-                             echo -e "${LIGHTGREEN}     Example: ${YELLOW}mcservers screen 1 send say Hello World!${NOCOLOR}"
-                             #echo -e "${LIGHTGREEN}     Note the quotation marks are used for two or more words after &${YELLOW}send${NOCOLOR}"
-                             echo -e "\n${LIGHTGREEN}Tip: Wanting to send a message to all servers, such as ${YELLOW}Say ${LIGHTGREEN}or${YELLOW} Broadcast${LIGHTGREEN},${NOCOLOR}"
-                             echo -e "${LIGHTGREEN}AND you are using Bungee, may I suggest sending an ${YELLOW}Alert${LIGHTGREEN} message to that server?${NOCOLOR}"
+                                echo -e "\n${LIGHTGREEN}Input any command and text after ${YELLOW}SEND${LIGHTGREEN} to send a command to select server screen.${NOCOLOR}"
+                                echo -e "${LIGHTGREEN}     Example: ${YELLOW}mcservers screen 1 send say Hello World!${NOCOLOR}"
+                                echo -e "\n${LIGHTGREEN}Tip: Wanting to send a message to all servers, such as ${YELLOW}Say ${LIGHTGREEN}or${YELLOW} Broadcast${LIGHTGREEN},${NOCOLOR}"
+                                echo -e "${LIGHTGREEN}AND you are using Bungee, may I suggest sending an ${YELLOW}Alert${LIGHTGREEN} message to that server?${NOCOLOR}"
                             }
                         fi
                     };;
-                    "") {
+                    ""|-z) {
+                        debug "Main Case: Screen: Entering Screen $2 for ${SERVER_NAME[$2]}"    #debug
                         echo -e "\n${YELLOW}CAUTION! ${LIGHTGREEN}To Exit Screen: Hold ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}A${LIGHTGREEN}, let go and hit ${YELLOW}D${LIGHTGREEN}.${NOCOLOR}"
                         read -s -n1 exist
+                        debug "Main Case: Screen: Entering Screen Prompt: $exist"    #debug
+                        debug "Main Case: Screen: Entering Screen Command: screen -x ${SERVER_NAME[$2]}"    #debug
                         command "screen -x ${SERVER_NAME[$2]}"
                         echo " "
                     };;
-                    *|help){
+                    *){
+                        debug "Main Case: Screen: ${*:3}"    #debug
                         echo -e "${LIGHTGREEN}   |   ${YELLOW} ID#${LIGHTGREEN}   |   ${YELLOW} Kill${LIGHTGREEN}   |   ${YELLOW} Send${LIGHTGREEN}   |${NOCOLOR}"
+                        echo -e "${LIGHTGREEN}Examples: ${GREEN}mcservers screen 0${NOCOLOR}"
+                        echo -e "${LIGHTGREEN}      Or: ${GREEN}mcservers screen 0 Kill${NOCOLOR}"
+                        echo -e "${LIGHTGREEN}      Or: ${GREEN}mcservers screen 0 Send String Of Text${NOCOLOR}"
                     };;
                     esac
                 else
+                    debug "Main Case: Screen: Is Running $2 = False! (True/False)"    #debug
                     echo -e "\n${LIGHTGREEN}Server ${GREEN}$2 ${SERVER_NAME[$2]}${LIGHTGREEN}: ${RED}Offline.${NOCOLOR}"
                 fi
             else
-                echo -e "\n${YELLOW}Server Choice Does Not Exit In servers.cfg!"
+                debug "Main Case: Screen: 1.User Input 2=${*:2}"    #debug
+                echo -e "\n${YELLOW}Server Choice Does Not Exist In servers.cfg!"
             fi
         else
+            debug "Main Case: Screen: 2.User Input 2=${*:2}"    #debug
             not_a_number
         fi
+        debug "Main Case: Screen: >End<"    #debug
     };;
     backup){ 
-        if [ "${MANUAL_BACKUPS_LOCATION}" == "none" ] ; then
+        debug "Main Case: Backup: $@"    #debug
+        if [ "${MANUAL_BACKUPS_LOCATION}" == "none" ] || [ "${MANUAL_BACKUPS_LOCATION}" == -z ] ; then
+            debug "Main Case: Backup: Manual_Backups_Location=None/NULL."    #debug
             {
             echo -e "${LIGHTGREEN}Backup Function Disabled Until MANUAL_BACKUPS_LOCATION is set with a directory.${NOCOLOR}"
         }
         else
             {
+                debug "Main Case: Backup: $2"    #debug
+                debug "Main Case: Backup: Manual_Backups_Location=${MANUAL_BACKUPS_LOCATION}."    #debug
                 case "$2" in
                 Clean|clean) {
+                    debug "Main Case: Backup: Case: Clean"    #debug
+                    debug "Main Case: Backup: Case: Clean: 3=$3."    #debug
                     if [[ "$3" =~ ^[0-9]+$ ]] ; then
+                        debug "Main Case: Backup: Case: Clean: 3=Is A Number! $3."    #debug
+                        debug "Main Case: Backup: Case: Clean:4=$4"    #debug
                         if [[ "$4" =~ ^[0-9]+$ ]] ; then
+                            debug "Main Case: Backup: Case: Clean: 4=Is A Number! $4."    #debug
                             echo -e "\n${LIGHTGREEN}Checking directory size of ${YELLOW}${SERVER_NAME[$3]}${LIGHTGREEN}... ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}C ${LIGHTGREEN}To Cancel.${NOCOLOR}"
+                            debug "Main Case: Backup: Case: Clean: Command: du -hs ${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$3]}"    #debug
                             command "du -hs ${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$3]}"
                             echo -e "\n${LIGHTGREEN}Clean out backups older than ${YELLOW}$4 days${LIGHTGREEN}?${NOCOLOR}"
                             if [[ "$5" = [YyNn] ]] ; then
+                                debug "Main Case: Backup: Case: Clean: 5=$5."    #debug
                                 yn="$5"
                             else {					
                                 yes_or_no yn
+                                debug "Main Case: Backup: Case: Clean: YN=$yn"    #debug
                                 }
                             fi
                             case "$yn" in
-                                y|Y) { find "${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$3]}"* -mtime +"$4" -exec rm {} \;
+                                y|Y) { 
+                                        debug "Main Case: Backup: Case: Clean: Case: Yes"    #debug
+                                        debug "Main Case: Backup: Case: Clean: Case: Command: find ${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$3]}* -mtime +$4 -exec rm {} \;"    #debug
+                                        find "${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$3]}"* -mtime +"$4" -exec rm {} \;
                                         echo -e "${LIGHTGREEN}DONE!${NOCOLOR}"
                                         echo -e "\n${LIGHTGREEN}The size of ${GREEN}${SERVER_NAME[$3]}${LIGHTGREEN}... ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}C ${LIGHTGREEN}To Cancel.${NOCOLOR}"
+                                        debug "Main Case: Backup: Case: Clean: Case: Command: du -hs ${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$3]}"    #debug
                                         command "du -hs ${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$3]}"
                                         echo -e "\n${LIGHTGREEN}The total size of ${GREEN}${MANUAL_BACKUPS_LOCATION}${LIGHTGREEN} is...${NOCOLOR}"
+                                        debug "Main Case: Backup: Case: Clean: Case: Command: du -hs ${MANUAL_BACKUPS_LOCATION}"    #debug
                                         command "du -hs ${MANUAL_BACKUPS_LOCATION}"
                                     };;
-                                n|N) { echo -e "\n${LIGHTGREEN}Backup Cleaning Discontinued.${NOCOLOR}"
+                                n|N) { 
+                                        debug "Main Case: Backup: Case: Clean: Case: No"    #debug
+                                        echo -e "\n${LIGHTGREEN}Backup Cleaning Discontinued.${NOCOLOR}"
                                     };;
                             esac
                         else
+                            debug "Main Case: Backup: Case: Clean: 4=Is NOT A Number! $4."    #debug
                             echo -e "\n${LIGHTGREEN}Please Specify ${YELLOW}Days Old${LIGHTGREEN} To Clean Out.${NOCOLOR}"
                             echo -e "${LIGHTGREEN}Example: ${YELLOW}service mcservers backup clean 0 5${NOCOLOR}"
                             echo -e "${YELLOW}         0 ${LIGHTGREEN}= Server ID#, and ${YELLOW}5${LIGHTGREEN} = Days.${NOCOLOR}"
                         fi
                     else
+                        debug "Main Case: Backup: Case: Clean: 3=Is NOT A Number! $3."    #debug
                         echo -e "\n${LIGHTGREEN}Please Specify ${YELLOW}Server ID#${LIGHTGREEN} To Clean Out.${NOCOLOR}"
                         echo -e "${LIGHTGREEN}Example: ${YELLOW}service mcservers backup clean 0 5${NOCOLOR}"
                         echo -e "${YELLOW}         0 ${LIGHTGREEN}= Server ID#, and ${YELLOW}5${LIGHTGREEN} = Days.${NOCOLOR}"
                     fi
                 };;
                 List|list) {
+                    debug "Main Case: Backup: Case: List:"    #debug
+                    debug "Main Case: Backup: Case: List: 3=$3"    #debug
                     if [[ "$3" =~ ^[0-9]+$ ]] ; then
+                        debug "Main Case: Backup: Case: List: 3=Is A Number! $3."    #debug
                         echo -e "\n${LIGHTGREEN}Listing Backups in ${GREEN}${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$3]}${LIGHTGREEN}...${NOCOLOR}"
+                        debug "Main Case: Backup: Case: List: Command: mkdir -p \"${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$3]}\""    #debug
                         command "mkdir -p \"${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$3]}\""
+                        debug "Main Case: Backup: Case: List: Command: ls -lh -F ${MANUAL_BACKUPS_LOCATION}/${SERVER_NAME[$3]}"    #debug
                         command "ls -lh -F ${MANUAL_BACKUPS_LOCATION}/${SERVER_NAME[$3]}" 
-                    else
+                    elif [ "$3" != -z ] ; then
+                        debug "Main Case: Backup: Case: List: 3=NULL"    #debug
                         echo -e "\n${LIGHTGREEN}Listing Backups in ${GREEN}${MANUAL_BACKUPS_LOCATION}${LIGHTGREEN}...${NOCOLOR}"
+                        debug "Main Case: Backup: Case: List: Command: mkdir -p \"${MANUAL_BACKUPS_LOCATION}\""    #debug
                         command "mkdir -p \"${MANUAL_BACKUPS_LOCATION}\""
+                        debug "Main Case: Backup: Case: List: Command: ls -lh -F ${MANUAL_BACKUPS_LOCATION}"    #debug
                         command "ls -lh -F ${MANUAL_BACKUPS_LOCATION}"
-                        echo " "
+                        echo -e "\n${LIGHTGREEN}Input Server ID# after ${YELLOW}LIST${LIGHTGREEN} for respective server's backups.${NOCOLOR}"
+                    else
+                        debug "Main Case: Backup: Case: List: 3=Is NOT A Number! $3."    #debug
                         echo -e "${LIGHTGREEN}Input Server ID# after ${YELLOW}LIST${LIGHTGREEN} for respective server's backups.${NOCOLOR}"
                     fi
                 };;
-                *|help) {
-                    {
-                        if [[ "$2" =~ ^[0-9]+$ ]] ; then
-                            if server_exist "$2" ; then
-                                if is_running "$2" ; then
-                                    echo -e "\n${YELLOW}CAUTION${RED}! ${LIGHTGREEN}Not Advised to manually backup a server while it's ${YELLOW}running${RED}!${NOCOLOR}"
-                                else
-                                    echo -e "\n${LIGHTGREEN}Server ${GREEN}$2 ${SERVER_NAME[$2]}${LIGHTGREEN}: ${RED}Offline.${NOCOLOR}"
-                                fi
-                                echo -e "\n${LIGHTGREEN}Checking directory size of ${GREEN}${SERVER_NAME[$2]}${LIGHTGREEN}... ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}C ${LIGHTGREEN}To Cancel.${NOCOLOR}"
-                                command "mkdir -p \"${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$2]}\""
-                                command "du -hs ${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$2]}"
-                                echo -e "\n${LIGHTGREEN}The total size of ${GREEN}${MANUAL_BACKUPS_LOCATION}${LIGHTGREEN} is...${NOCOLOR}"
-                                command "du -hs ${MANUAL_BACKUPS_LOCATION}"
-                                echo -e -n "\n${LIGHTGREEN}Do you wish to backup the WHOLE directory/server of ${GREEN}${SERVER_PATH[$2]}${LIGHTGREEN}?${NOCOLOR} "
-                                if [[ "$3" = [YyNn] ]] ; then
-                                        yn="$3"
-                                    else {
-                                        yes_or_no yn
-                                    }
-                                fi
-                                case "$yn" in
-                                    y|Y){
-                                        echo -e "${LIGHTGREEN}Backing up ${GREEN}${SERVER_NAME[$2]}${LIGHTGREEN}. . .${NOCOLOR}"
-                                        if is_running "$2" ; then 
-                                            command "screen -rx ${SERVER_NAME[$2]} -X eval 'stuff \"${MSG_CMD[$1]} Saving Disabled. Backing Up!\"\015'"
-                                            command "screen -rx ${SERVER_NAME[$2]} -X eval 'stuff \"save-all\"\015'"
-                                            command "screen -rx ${SERVER_NAME[$2]} -X eval 'stuff \"save-off\"\015'"
-                                        fi
-                                        env GZIP=-9 tar czf "${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$2]}/${SERVER_PATH[$2]}-$(date +%d-%m-%Y--%H-%M).tar.gz" "${SERVER_SETTINGS}/${SERVER_PATH[$2]}"
-                                        if is_running "$2" ; then 
-                                            command "screen -rx ${SERVER_NAME[$2]} -X eval 'stuff \"${MSG_CMD[$1]} Server Saving Enabled. Backing Complete!\"\015'"
-                                            command "screen -rx ${SERVER_NAME[$2]} -X eval 'stuff \"save-on\"\015'"
-                                        fi
-                                        echo -e "${LIGHTGREEN}DONE!${NOCOLOR}"
-                                        echo -e "\n${LIGHTGREEN}The size of ${GREEN}${SERVER_NAME[$2]}${LIGHTGREEN}... ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}C ${LIGHTGREEN}To Cancel.${NOCOLOR}"
-                                        command "du -hs ${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$2]}"
-                                        echo -e "\n${LIGHTGREEN}The total size of ${GREEN}${MANUAL_BACKUPS_LOCATION}${LIGHTGREEN} is...${NOCOLOR}"
-                                        command "du -hs ${MANUAL_BACKUPS_LOCATION}"
-                                        };;
-                                    n|N){
-                                        echo -e "${LIGHTGREEN}Backup Cancelled for ${GREEN}${SERVER_NAME[$2]}${LIGHTGREEN}.${NOCOLOR}"
-                                        };;
-                                esac
+                *) {
+                    debug "Main Case: Backup: Case: Help:"    #debug
+                    debug "Main Case: Backup: Case: Help: 2=$2."    #debug
+                    if [[ "$2" =~ ^[0-9]+$ ]] ; then
+                        debug "Main Case: Backup: Case: Help: 2=Is A Number! $2."    #debug
+                        if server_exist "$2" ; then
+                            debug "Main Case: Backup: Case: Help: Server_Exist=True (True/False)"    #debug
+                            if is_running "$2" ; then
+                                debug "Main Case: Backup: Case: Help: Server_Exist: Is_Running=True (True/False)"    #debug
+                                echo -e "\n${YELLOW}CAUTION${RED}! ${LIGHTGREEN}Not Advised to manually backup a server while it's ${YELLOW}running${RED}!${NOCOLOR}"
                             else
-                                exit
+                                debug "Main Case: Backup: Case: Help: Server_Exist: Is_Running=False (True/False)"    #debug
+                                echo -e "\n${LIGHTGREEN}Server ${GREEN}$2 ${SERVER_NAME[$2]}${LIGHTGREEN}: ${RED}Offline.${NOCOLOR}"
                             fi
+                            echo -e "\n${LIGHTGREEN}Checking directory size of ${GREEN}${SERVER_NAME[$2]}${LIGHTGREEN}... ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}C ${LIGHTGREEN}To Cancel.${NOCOLOR}"
+                            debug "Main Case: Backup: Case: Help: Command: mkdir -p \"${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$2]}\""    #debug
+                            command "mkdir -p \"${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$2]}\""
+                            debug "Main Case: Backup: Case: Help: Command: du -hs ${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$2]}"    #debug
+                            command "du -hs ${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$2]}"
+                            echo -e "\n${LIGHTGREEN}The total size of ${GREEN}${MANUAL_BACKUPS_LOCATION}${LIGHTGREEN} is...${NOCOLOR}"
+                            debug "Main Case: Backup: Case: Help: Command: du -hs ${MANUAL_BACKUPS_LOCATION}"    #debug
+                            command "du -hs ${MANUAL_BACKUPS_LOCATION}"
+                            echo -e -n "\n${LIGHTGREEN}Do you wish to backup the WHOLE directory/server of ${GREEN}${SERVER_PATH[$2]}${LIGHTGREEN}?${NOCOLOR} "
+                            debug "Main Case: Backup: Case: Help: 3=$3."    #debug
+                            if [[ "$3" = [YyNn] ]] ; then
+                                    yn="$3"
+                                    debug "Main Case: Backup: Case: Help: YN=$yn."    #debug
+                                else {
+                                    yes_or_no yn
+                                    debug "Main Case: Backup: Case: Help: User Input YN=$yn."    #debug
+                                }
+                            fi
+                            case "$yn" in
+                                y|Y){
+                                    debug "Main Case: Backup: Case: Help: CaseYN=Yes"    #debug
+                                    echo -e "${LIGHTGREEN}Backing up ${GREEN}${SERVER_NAME[$2]}${LIGHTGREEN}. . .${NOCOLOR}"
+                                    if is_running "$2" ; then 
+                                        debug "Main Case: Backup: Case: Help: CaseYN: 1.Is_Running=True $2 (Yes/True)"    #debug
+                                        debug "Main Case: Backup: Case: Help: CaseYN: Is_Running: Command: screen -rx ${SERVER_NAME[$2]} -X eval 'stuff \"${MSG_CMD[$1]} Saving Disabled. Backing Up!\"\015'"    #debug
+                                        command "screen -rx ${SERVER_NAME[$2]} -X eval 'stuff \"${MSG_CMD[$1]} Saving Disabled. Backing Up!\"\015'"
+                                        debug "Main Case: Backup: Case: Help: CaseYN: Is_Running: Command: screen -rx ${SERVER_NAME[$2]} -X eval 'stuff \"save-all\"\015'"    #debug
+                                        command "screen -rx ${SERVER_NAME[$2]} -X eval 'stuff \"save-all\"\015'"
+                                        debug "Main Case: Backup: Case: Help: CaseYN: Is_Running: Command: screen -rx ${SERVER_NAME[$2]} -X eval 'stuff \"save-off\"\015'"    #debug
+                                        command "screen -rx ${SERVER_NAME[$2]} -X eval 'stuff \"save-off\"\015'"
+                                    fi
+                                    debug "Main Case: Backup: Case: Help: CaseYN: Command: env GZIP=-9 tar czf ${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$2]}/${SERVER_PATH[$2]}-$(date +%d-%m-%Y--%H-%M).tar.gz" "${SERVER_SETTINGS}/${SERVER_PATH[$2]}"    #debug
+                                    env GZIP=-9 tar czf "${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$2]}/${SERVER_PATH[$2]}-$(date +%d-%m-%Y--%H-%M).tar.gz" "${SERVER_SETTINGS}/${SERVER_PATH[$2]}"
+                                    if is_running "$2" ; then 
+                                        debug "Main Case: Backup: Case: Help: CaseYN: 2.Is_Running=True $2 (Yes/True)"    #debug
+                                        debug "Main Case: Backup: Case: Help: CaseYN: Command: screen -rx ${SERVER_NAME[$2]} -X eval 'stuff \"${MSG_CMD[$1]} Server Saving Enabled. Backing Complete!\"\015'"    #debug
+                                        command "screen -rx ${SERVER_NAME[$2]} -X eval 'stuff \"${MSG_CMD[$1]} Server Saving Enabled. Backing Complete!\"\015'"
+                                        debug "Main Case: Backup: Case: Help: CaseYN: Command: screen -rx ${SERVER_NAME[$2]} -X eval 'stuff \"save-on\"\015'"    #debug
+                                        command "screen -rx ${SERVER_NAME[$2]} -X eval 'stuff \"save-on\"\015'"
+                                    fi
+                                    echo -e "${LIGHTGREEN}DONE!${NOCOLOR}"
+                                    echo -e "\n${LIGHTGREEN}The size of ${GREEN}${SERVER_NAME[$2]}${LIGHTGREEN}... ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}C ${LIGHTGREEN}To Cancel.${NOCOLOR}"
+                                    debug "Main Case: Backup: Case: Help: CaseYN: Command: du -hs ${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$2]}"    #debug
+                                    command "du -hs ${MANUAL_BACKUPS_LOCATION}/${SERVER_PATH[$2]}"
+                                    echo -e "\n${LIGHTGREEN}The total size of ${GREEN}${MANUAL_BACKUPS_LOCATION}${LIGHTGREEN} is...${NOCOLOR}"
+                                    debug "Main Case: Backup: Case: Help: CaseYN: Command: du -hs ${MANUAL_BACKUPS_LOCATION}"    #debug
+                                    command "du -hs ${MANUAL_BACKUPS_LOCATION}"
+                                    };;
+                                n|N){
+                                    debug "Main Case: Backup: Case: Help: CaseYN=No"    #debug
+                                    echo -e "${LIGHTGREEN}Backup Cancelled for ${GREEN}${SERVER_NAME[$2]}${LIGHTGREEN}.${NOCOLOR}"
+                                    };;
+                                *){
+                                    debug "Main Case: Backup: Case: Help: CaseYN=...How'd you get here?? $@"    #debug
+                                    };;
+                             esac
                         else
-                            #not_a_number
-                            echo -e "\n${LIGHTGREEN}Choices:${NOCOLOR}"
-                            echo -e "${LIGHTGREEN}   |   ${YELLOW} ID#${LIGHTGREEN}   |   ${YELLOW} Clean${LIGHTGREEN}   |   ${YELLOW} List${LIGHTGREEN}   |${NOCOLOR}"
+                            debug "Main Case: Backup: Case: Help: Server_Exist=False (True/False)"    #debug
+                            echo -e "${YELLOW}Server ID ${GREEN}$2 ${YELLOW}Does not exist.${NOCOLOR}"
                         fi
-                    }
+                    else
+                        debug "Main Case: Backup: Case: Help: ${*:2}."    #debug
+                        echo -e "\n${LIGHTGREEN}Choices:${NOCOLOR}"
+                        echo -e "${LIGHTGREEN}   |   ${YELLOW} ID#${LIGHTGREEN}   |   ${YELLOW} Clean${LIGHTGREEN}   |   ${YELLOW} List${LIGHTGREEN}   |${NOCOLOR}"
+                        echo -e "${LIGHTGREEN}Examples:    ${GREEN}mcservers backup 0${NOCOLOR}"
+                        echo -e "${LIGHTGREEN}Examples:    ${GREEN}mcservers backup List${NOCOLOR}"
+                        echo -e "${LIGHTGREEN}Examples:    ${GREEN}mcservers backup Clean ID#${NOCOLOR}"
+                    fi
                 };;
                 esac
             }
         fi
+    debug "Main Case: Backup: >End<"    #debug
     };;
     create){
+        debug "Main Case: Create:"    #debug
+        debug "Main Case: Create: 2=$2."    #debug
         case "$2" in
             server.properties){
+                debug "Main Case: Create: Case: Serverproperties_Template"    #debug
                 serverproperties_template
             };;
             bukkit.yml){
+                debug "Main Case: Create: Case: Bukkityml_Template"    #debug
                 bukkityml_template
             };;
             spigot.yml){
+                debug "Main Case: Create: Case: Spigotyml_Template"    #debug
                 spigotyml_template
             };;
             #help.yml){     #Leaving off until a good help.yml setup comes around. I have it disabled on my servers. Suggestions?
+            #    debug "Main Case: Create: Case: Helpyml_Template"    #debug
             #    helpyml_template
             #};;
             commands.yml){
+                debug "Main Case: Create: Case: Commandsyml_Template"    #debug
                 commandsyml_template
             };;
-            help|*){
+            *){
+                debug "Main Case: Create: Case: Help: 2=${*:2}"    #debug
+                echo -e "${LIGHTGREEN}Options to create default templates, used for New servers upon creation.${NOCOLOR}"
                 echo -e "\n${LIGHTGREEN}Choices (Case SeNsItIvE!):${NOCOLOR}"
-                echo -e "   ${YELLOW} server.properties${LIGHTGREEN} | ${YELLOW} bukkit.yml${LIGHTGREEN} | ${YELLOW} commands.yml${LIGHTGREEN} | ${YELLOW} spigot.yml${NOCOLOR}\n"
+                echo -e "${LIGHTGREEN}   |   ${YELLOW}server.properties   ${LIGHTGREEN}|   ${YELLOW}bukkit.yml   ${LIGHTGREEN}|   ${YELLOW}spigot.yml   ${LIGHTGREEN}|   ${YELLOW}commands.yml   ${LIGHTGREEN}|${NOCOLOR}"
+                echo -e "${LIGHTGREEN} Note: ${YELLOW}Help.yml${LIGHTGREEN} and ${YELLOW}HelpTEMPLATE.yml${LIGHTGREEN} has no scripted templates at this time."
+                echo -e "${LIGHTGREEN}Example: ${GREEN}service mcservers create bukkit.yml${NOCOLOR}\n"
             };;
         esac
-        echo -e "${LIGHTGREEN}To modify the default templates, ${YELLOW}service mcservers edit nameTEMPLATE.yml${NOCOLOR}\n"
         if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 2 ; fi
+        debug "Main Case: Create: >End<"    #debug
     };;
     edit|view){ 
+        debug "Main Case: Edit:"    #debug
+        debug "Main Case: Edit: 2=$2"    #debug
         echo -e "\n${YELLOW}CAUTION! ${LIGHTGREEN}Never Use TAB while editing. Use Spaces!${NOCOLOR}"
         echo -e "   ${LIGHTGREEN}If the editor shows blank, the Server ID does not contain that file.${NOCOLOR}"
         echo -e "${LIGHTGREEN}To Exit View/Edit: Hold ${YELLOW}CTRL${LIGHTGREEN}+${YELLOW}X${LIGHTGREEN}, let go and hit ${YELLOW}Y${LIGHTGREEN}/${YELLOW}N${LIGHTGREEN} To Save Changes or Not.${NOCOLOR}"
         read -s -n1 exist
+        debug "Main Case: Edit: User Input: Exist=$exist."    #debug
         case "$2" in
             mcservers) {
-                if [ -f /etc/init.d/mcservers ] ; then     #Hey, I know this is stupid, but for reduntcy and possibility of the script running elsewhere, I'm placing a file check here.
-                    command "nano /etc/init.d/mcservers"
+            debug "Main Case: Edit: Case: MCServers:"    #debug
+                if [ -f mcservers ] ; then     #Script can be ran from anywhere. If editing directly, CD (Change Directory) to where this file is, then mcservers edit mcservers, or just nano mcservers. At this point, you should know what you are doing...right?
+                    debug "Main Case: Edit: Case: MCServers: mcservers found!"    #debug
+                    debug "Main Case: Edit: Case: MCServers: Command: nano mcservers"    #debug
+                    command "nano mcservers"
                 else
-                    echo -e "${GREEN}/etc/init.d/mcservers ${YELLOW}Doen't Exist...?!${NOCOLOR}"
-                    echo -e "    ${LIGHTGREEN}How are you running this!? Please edit this script to match it's location.${NOCOLOR}"
+                    debug "Main Case: Edit: Case: MCServers: mcservers Not found?"    #debug
+                    debug pwd    #debug
+                    echo -e "${GREEN}mcservers ${YELLOW}File Doen't Exist...?!${NOCOLOR}"
+                    echo -e "    ${LIGHTGREEN}How are you running this!? Please edit this portion of the script to match the location.${NOCOLOR}"
                 fi
               };;
             servers.cfg){
+                debug "Main Case: Edit: Case: servers.cfg:"    #debug
                 if [ -f "$SERVER_SETTINGS/servers.cfg" ] ; then
+                    debug "Main Case: Edit: Case: servers.cfg found!"    #debug
+                    debug "Main Case: Edit: Case: servers.cfg: Command: nano ${SERVER_SETTINGS}/servers.cfg"    #debug
                     command "nano ${SERVER_SETTINGS}/servers.cfg"
                 else
-                    echo -e "${GREEN}${SERVER_SETTINGS}/servers.cfg ${YELLOW}Doen't Exist...?!${NOCOLOR}"
-                    echo -e "    ${LIGHTGREEN}How are you running this!? Please edit this script to match it's location!${NOCOLOR}"
+                    debug "Main Case: Edit: Case: servers.cfg Not found?"    #debug
+                    debug "Main Case: Edit: Case: servers.cfg at ${SERVER_SETTINGS}/servers.cfg?"    #debug
+                    echo -e "${GREEN}${SERVER_SETTINGS}/servers.cfg ${YELLOW}Doen't Exist where it should...?!${NOCOLOR}"
+                    echo -e "    ${LIGHTGREEN}How are you running this at this point!? Please edit this script to match it's location? Servers.cfg is created if not existant every time this script is ran, if it can't, it Should error and exit!${NOCOLOR}"
                 fi
             };;
             server.properties|bukkit.yml|spigot.yml|config.yml|eula.txt|help.yml|commands.yml){ 
+                debug "Main Case: Edit: Case: 1.(Multiple Choice) $2:"    #debug
                 if [[ "$3" =~ ^[0-9]+$ ]] ; then
+                    debug "Main Case: Edit: Case: 1.(Multiple Choice) $2: 3=Is A Number! $3."    #debug
                     if server_exist "$3" ; then
+                        debug "Main Case: Edit: Case: 1.(Multiple Choice) $2: Server_Exist=True! (True/False) $3 ${SERVER_NAME[$3]}."    #debug
                         if [ -f "$SERVER_SETTINGS/${SERVER_PATH[$3]}/$2" ] ; then
+                            debug "Main Case: Edit: Case: 1.(Multiple Choice) $2: Server_Exist: 2=$2 Exists!"    #debug
+                            debug "Main Case: Edit: Case: 1.(Multiple Choice) $2: Server_Exist: Command: nano $SERVER_SETTINGS/${SERVER_PATH[$3]}/$2."    #debug
                             command "nano $SERVER_SETTINGS/${SERVER_PATH[$3]}/$2"
                         else
+                            debug "Main Case: Edit: Case: 1.(Multiple Choice) $2: Server_Exist: 2=$2 Does Not Exist!"    #debug
                             echo -e "${LIGHTGREEN}$SERVER_SETTINGS/${SERVER_PATH[$3]}/$2 ${YELLOW}Doen't Exist!${NOCOLOR}"
+                            echo -e "${LIGHTGREEN}Please ${GREEN}Create ${LIGHTGREEN} or Run the server to create the file.${NOCOLOR}"
                         fi
                     else
-                        exit
+                        debug "Main Case: Edit: Case: 1.(Multiple Choice) $2: Server_Exist=False! (True/False) $3 ${SERVER_NAME[$3]}."    #debug
+                        echo -e "${LIGHTGREEN}Server ID: ${GREEN}$3 ${LIGHTGREEN}Does Not Exist.${NOCOLOR}"
+                        echo -e "${GREEN}mcservers servers status ${LIGHTGREEN}For a list of IDs.${NOCOLOR}"
                     fi
                 else
+                    debug "Main Case: Edit: Case: 1.(Multiple Choice) $2: 3=Is Not A Number! ${*:3}."    #debug
                     not_a_number
                 fi
             };;
             log){ 
+                debug "Main Case: Edit: Case: Log:"    #debug
+                debug "Main Case: Edit: Case: Log: 3=$3."    #debug
                 if [[ "$3" =~ ^[0-9]+$ ]] ; then
+                    debug "Main Case: Edit: Case: Log: 3=Is A Number! $3."    #debug
                     if server_exist "$3" ; then
+                        debug "Main Case: Edit: Case: Log: Server_Exist=True! (True/False) $3 ${SERVER_NAME[$3]}."    #debug
                         echo -e "         \n${LIGHTGREEN}This Only Shows The LATEST.log file.${NOCOLOR}"
                         echo -e "         ${LIGHTGREEN}Previous logs need to be extracted from their respective archives.${NOCOLOR}"
                         echo -e -n "         ${LIGHTGREEN}Press any key to continue...${NOCOLOR}"
                         read -s -n1 exist
+                        debug "Main Case: Edit: Case: Log: Server_Exist: User Input Exist=$exist."    #debug
+                        debug "Main Case: Edit: Case: Log: Server_Exist: Command: nano $SERVER_SETTINGS/${SERVER_PATH[$3]}/logs/latest.log"    #debug
                         command "nano $SERVER_SETTINGS/${SERVER_PATH[$3]}/logs/latest.log"
                     else
-                        exit
+                        debug "Main Case: Edit: Case: Log: Server_Exist:False! (True/False) #3 ${SERVER_NAME[$3]}."    #debug
+                        echo -e "${LIGHTGREEN}Server ID: ${GREEN}$3 ${LIGHTGREEN}Does Not Exist!${NOCOLOR}"
+                        echo -e "${GREEN}mcservers servers status ${LIGHTGREEN}For a list of IDs.${NOCOLOR}"
                     fi
                 else
+                    debug "Main Case: Edit: Case: Log: 3=Is Not A Number! ${*:3}."    #debug
                     not_a_number
                 fi
             };;
-            serverTEMPLATE.properties|bukkitTEMPLATE.yml|spigotTEMPLATE.yml|commandsTEMPLATE.yml){ 
+            serverTEMPLATE.properties|bukkitTEMPLATE.yml|spigotTEMPLATE.yml|commandsTEMPLATE.yml){
+                debug "Main Case: Edit: Case: 2.(Multiple Choice) $2:"    #debug
                 if [ -f "$SERVER_SETTINGS/$2" ] ; then
+                    debug "Main Case: Edit: Case: 2.(Multiple Choice) $2= Exists!"    #debug
+                    debug "Main Case: Edit: Case: 2.(Multiple Choice) $2: Command: nano $SERVER_SETTINGS/$2"    #debug
                     command "nano $SERVER_SETTINGS/$2"
                 else
+                    debug "Main Case: Edit: Case: 2.(Multiple Choice) $2= Does Not Exist!"    #debug
                     echo -e "${LIGHTGREEN}$SERVER_SETTINGS/$2 ${YELLOW}Doen't Exist!${NOCOLOR}"
+                    echo -e "${GREEN}Create ${LIGHTGREEN}the Template(s) first.${NOCOLOR}"
                 fi
             };;
-            *|help){
+            *){
+                debug "Main Case: Edit: Case: Help: 2=${*:2}"    #debug
+                echo -e "${LIGHTGREEN}Options to Edit Configs and Default Templates, used for created/ran servers.${NOCOLOR}"
                 echo -e "\n${LIGHTGREEN}Choices (Case SeNsItIvE!):${NOCOLOR}"
-                echo -e "   ${YELLOW} servers.cfg${LIGHTGREEN} | ${YELLOW} server.properties ID#${LIGHTGREEN} | ${YELLOW} bukkit.yml ID#${LIGHTGREEN} | ${YELLOW} commands.yml ID#${LIGHTGREEN} | ${YELLOW} help.yml ID#${LIGHTGREEN} | ${YELLOW} spigot.yml ID#${LIGHTGREEN} | ${YELLOW} eula.txt ID#${LIGHTGREEN} | ${YELLOW} log ID#${NOCOLOR}"
-                echo -e "   ${LIGHTGREEN}Example: ${YELLOW}service mcservers edit log 1${NOCOLOR}"
-                echo -e "${LIGHTGREEN}A standard server file doesn't exist? Notify the author, or edit the script.${NOCOLOR}"
-                echo -e "${LIGHTGREEN}    Otherwise, ${YELLOW}nano ${LIGHTGREEN}or ${YELLOW}vim $SERVER_SETTINGS/file/location/filename.cfg${NOCOLOR}"
+                echo -e "${LIGHTGREEN}   |   ${YELLOW}server.properties   ${LIGHTGREEN}|   ${YELLOW}bukkit.yml   ${LIGHTGREEN}|   ${YELLOW}spigot.yml   ${LIGHTGREEN}|   ${YELLOW}commands.yml   ${LIGHTGREEN}|   ${YELLOW}help.yml   ${LIGHTGREEN}|${NOCOLOR}"
+                echo -e "${LIGHTGREEN}   |   ${YELLOW}serverTEMPLATE.properties   ${LIGHTGREEN}|   ${YELLOW}bukkitTEMPLATE.yml   ${LIGHTGREEN}|   ${YELLOW}spigotTEMPLATE.yml   ${LIGHTGREEN}|   ${YELLOW}commandsTEMPLATE.yml   ${LIGHTGREEN}|${NOCOLOR}"
+                echo -e "${LIGHTGREEN} Note: ${YELLOW}HelpTEMPLATE.yml${LIGHTGREEN} has no scripted template at this time."
+                echo -e "${LIGHTGREEN}Example: ${GREEN}service mcservers edit bukkit.yml${NOCOLOR}\n"
               };;
         esac
+        debug "Main Case: Edit: >End<"    #debug
     };;
     overwrite|import){
+        debug "Main Case: Overwrite:"    #debug
+        debug "Main Case: Overwrite: 2=$2."    #debug
         case "$2" in
             server.properties|bukkit.yml|spigot.yml|commands.yml){
                 templatefile="nofile.xyz"
+                debug "Main Case: Overwrite: $2: TempFileVariable=$templatefile."    #debug
                 case "$2" in
-                    server.properties){ templatefile="serverTEMPLATE.properties"
+                    server.properties){
+                        debug "Main Case: Overwrite: $2: Case: server.properties"    #debug
+                        templatefile="serverTEMPLATE.properties"
+                        debug "Main Case: Overwrite: $2: Case: 1.TempFilVariable=$templatefile"    #debug
                     };;
-                    bukkit.yml){ templatefile="bukkitTEMPLATE.yml"
+                    bukkit.yml){ 
+                        debug "Main Case: Overwrite: $2: Case: Bukkit.yml"    #debug
+                        templatefile="bukkitTEMPLATE.yml"
+                        debug "Main Case: Overwrite: $2: Case: 2.TempFilVariable=$templatefile"    #debug
                     };;
-                    #help.yml){ templatefile="helpTEMPLATE.yml"
+                    #help.yml){ 
+                    #    debug "Main Case: Overwrite: $2: Case: Help.yml"    #debug
+                    #    templatefile="helpTEMPLATE.yml"
+                    #    debug "Main Case: Overwrite: $2: Case: 3.TempFilVariable=$templatefile"    #debug
                     #};;
-                    spigot.yml){ templatefile="spigotTEMPLATE.yml"
+                    spigot.yml){ 
+                        debug "Main Case: Overwrite: $2: Case: Spigot.yml"    #debug
+                        templatefile="spigotTEMPLATE.yml"
+                        debug "Main Case: Overwrite: $2: Case: 4.TempFilVariable=$templatefile"    #debug
                     };;
-                    commands.yml){ templatefile="commandsTEMPLATE.yml"
+                    commands.yml){ 
+                        debug "Main Case: Overwrite: $2: Case: Commands.yml"    #debug
+                        templatefile="commandsTEMPLATE.yml"
+                        debug "Main Case: Overwrite: $2: Case: 5.TempFilVariable=$templatefile"    #debug
                     };;
                 esac
+                debug "Main Case: Overwrite: $2: ${SERVER_SETTINGS}/${templatefile}."    #debug
                 if [ -f "$SERVER_SETTINGS/${templatefile}" ] ; then
+                    debug "Main Case: Overwrite: $2: ${SERVER_SETTINGS}/${templatefile} Exists!"    #debug
                     if [[ "$3" =~ ^[0-9]+$ ]] ; then
+                        debug "Main Case: Overwrite: $2: ${templatefile}: 3=Is A Number! $3."    #debug
                         if server_exist "$3" ; then
+                            debug "Main Case: Overwrite: $2: ${templatefile}: Server_Exist=True! (True/False) $3 ${SERVER_NAME[$3]}."    #debug
+                            debug "Main Case: Overwrite: $2: ${templatefile}: Server_Exist: ${SERVER_SETTINGS}/${SERVER_PATH[$3]}."    #debug
                             if [ -d "$SERVER_SETTINGS/${SERVER_PATH[$3]}" ] ; then
+                                debug "Main Case: Overwrite: $2: ${templatefile}: Server_Exist: ${SERVER_SETTINGS}/${SERVER_PATH[$3]}=Exists!"    #debug
                                 echo -e "\n${LIGHTGREEN}Are you sure you want to copy $2\'s template to ${SERVER_PATH[$3]}?${NOCOLOR}"
                                 yes_or_no yn
+                                debug "Main Case: Overwrite: $2: ${templatefile}: Server_Exist: $3: User Input YN=$yn."    #debug
                                 case "$yn" in
                                     Y){
+                                        debug "Main Case: Overwrite: $2: ${templatefile}: Server_Exist: $3: CaseYN: Yes."    #debug
                                         if [ -d "$SERVER_SETTINGS" ] ; then
                                             echo -e -n "${LIGHTGREEN} $SERVER_SETTINGS exists. Proceeding... ${NOCOLOR}"
                                         else
-                                            mkdir "$SERVER_SETTINGS"
+                                            debug "Main Case: Overwrite: $2: ${templatefile}: Server_Exist: $3: CaseYN: Directory $SERVER_SETTINGS not accessible?...Why? Checked and confirmed/created before!?!?"    #debug
+                                            exit 0      #Though checked at the beginning of the script, the server settings directory was checked for, created if not a
                                         fi
                                         cd "${SERVER_SETTINGS}" ||  { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} ${NOCOLOR}\n" && exit; }
+                                        debug "Main Case: Overwrite: $2: ${templatefile}: Server_Exist: $3: CaseYN: $(pwd)"    #debug
+                                        debug "Main Case: Overwrite: $2: ${templatefile}: Server_Exist: $3: CaseYN: Command: cp ${templatefile}" "${SERVER_PATH[$3]}/$2"    #debug
                                         cp "${templatefile}" "${SERVER_PATH[$3]}/$2"
                                         echo -e "\n${LIGHTGREEN}$2${LIGHTGREEN} in ${GREEN}${SERVER_PATH[$3]}${LIGHTGREEN} has been overwritten by ${GREEN}${templatefile}${LIGHTGREEN}.${NOCOLOR}"
                                     };;
                                     N){
+                                        debug "Main Case: Overwrite: $2: ${templatefile}: Server_Exist: $3: CaseYN: Yes."    #debug
                                         echo -e "\n${GREEN}$2${LIGHTGREEN} in ${GREEN}${SERVER_PATH[$3]}${LIGHTGREEN} has not been overwritten.${NOCOLOR}"
                                     };;
                                 esac
                             else
+                                debug "Main Case: Overwrite: $2: ${templatefile}: Server_Exist: ${SERVER_SETTINGS}/${SERVER_PATH[$3]}=Does Not Exist!"    #debug
                                 echo -e "\n${GREEN}$SERVER_SETTINGS/${SERVER_PATH[$3]} ${YELLOW}Doen't Exist!${NOCOLOR}"
                                 echo -e "${LIGHTGREEN}Please start/create ${GREEN}${SERVER_NAME[$3]} ${LIGHTGREEN}first.${NOCOLOR}"
                             fi
                         else
-                            echo -e "\n${YELLOW}Server Choice Does Not Exit In servers.cfg!"
+                            debug "Main Case: Overwrite: $2: ${templatefile}: Server_Exist=False! (True/False) $3 ${SERVER_NAME[$3]}."    #debug
+                            echo -e "${LIGHTGREEN}Server ID: ${GREEN}$3 ${LIGHTGREEN}Does Not Exist.${NOCOLOR}"
+                            echo -e "${GREEN}mcservers servers status ${LIGHTGREEN}For a list of IDs.${NOCOLOR}"
                         fi
                     else
+                        debug "Main Case: Overwrite: $2: ${templatefile}: 3=Is Not A Number! $3."    #debug
                         not_a_number
                     fi
                 else
+                    debug "Main Case: Overwrite: $2: ${SERVER_SETTINGS}/${templatefile} Does Not Exist!"    #debug
                     echo -e "\n${LIGHTGREEN}$SERVER_SETTINGS/$2 ${YELLOW}Doen't Exist!${NOCOLOR}"
                     echo -e "${LIGHTGREEN}Create the template with: ${YELLOW}service mcservers create $2${NOCOLOR}"
                 fi
             };;
-            help|*){
+            *){
+                debug "Main Case: Overwrite: Help: 2=${*:2}"    #debug
                 echo -e "\n${LIGHTGREEN}Choices (Case SeNsItIvE!):${NOCOLOR}"
-                echo -e "${LIGHTGREEN}   |   ${YELLOW} server.properties ID#${LIGHTGREEN}   |   ${YELLOW} bukkit.yml$ ID#${LIGHTGREEN}   |${NOCOLOR}"
-                echo -e "${LIGHTGREEN}   |   ${YELLOW} commands.yml ID#     ${LIGHTGREEN}   |   ${YELLOW} spigot.yml ID#${LIGHTGREEN}    |${NOCOLOR}"
+                echo -e "${LIGHTGREEN}   |   ${YELLOW}server.properties   ${LIGHTGREEN}|   ${YELLOW}bukkit.yml   ${LIGHTGREEN}|   ${YELLOW}spigot.yml   ${LIGHTGREEN}|   ${YELLOW}commands.yml   ${LIGHTGREEN}|${NOCOLOR}"
             };;
         esac
+        debug "Main Case: Overwrite: 2=NULL"    #debug
         echo -e "\n${LIGHTGREEN}To modify the files in the servers or templates, ${YELLOW}service mcservers edit${NOCOLOR}"
         if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 2 ; fi
+        debug "Main Case: Overwrite: >End<"    #debug
     };;
     server|servers){
+        debug "Main Case: Server:"    #debug
+        debug "Main Case: Server: 2=$2."    #debug
         case "$2" in
-            "start"){
+            "start"|"stop"|"restart"){
+                debug "Main Case: Server: Case: StartStop 3=$3."    #debug
                 echo " "
                 if [ "$3" == "all" ] ; then 
+                    debug "Main Case: Server: Case: StartStop: Servers=$SERVERS 4=$4."    #debug
                     { for (( i = 0; i < $SERVERS; i++ )) ; do
-                        start_servers "$i" "$4"
+                        debug "Main Case: Server: Case: StartStop: Server=$i 4=$4"    #debug
+                        if [ "start" == "$2" ] ; then start_servers "$i" "$4" ; 
+                        elif [ "stop" == "$2" ] ; then stop_servers "$i" ; 
+                        elif [ "restart" == "$2" ] ; then restart_servers "$i" ; fi
                         if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 2 ; fi
                     done
                     echo " "
                     show_screens
                     }
                 else {
+                    debug "Main Case: Server: Case: Start: 3=$3 4=$4."    #debug
                     if [[ "$3" =~ ^[0-9]+$ ]] ; then
-                        start_servers "$3" "$4"
+                        debug "Main Case: Server: Case: Start: 3=Is A Number!"    #debug
+                        if [ "start" == "$2" ] ; then start_servers "$3" "$4" ; 
+                        elif [ "stop" == "$2" ] ; then stop_servers "$3" ; 
+                        elif [ "restart" == "$2" ] ; then restart_servers "$3" ; fi
                         echo " "
                         show_screens
                     else
+                        debug "Main Case: Server: Case: StartStop: 3=Is Not A Number or \"all\" 4=${*:4}."    #debug
                         not_a_number
                     fi
                 }
                 fi
              };;
-            "stop"){
-                echo " "
-                if [ "$3" == "all" ] ; then 
-                    for (( i = 0; i < $SERVERS; i++ )) ; do
-                        stop_servers $i
-                        if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 5 ; fi
-                    done
-                    echo " "
-                    show_screens
-                else {
-                    if [[ "$3" =~ ^[0-9]+$ ]] ; then
-                        stop_servers "$3"
-                        echo " "
-                        show_screens
-                    else
-                        not_a_number
-                    fi
-                }
-                fi
-            };;
-            restart){
-                echo " "
-                if [ "$3" == "all" ] ; then 
-                    for (( i = 0; i < $SERVERS; i++ )) ; do
-                        restart_servers $i "$4"
-                        if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 5 ; fi
-                    done
-                    echo " "
-                    show_screens
-                else {
-                    if [[ "$3" =~ ^[0-9]+$ ]] ; then
-                        restart_servers "$3"
-                        echo " "
-                        show_screens
-                    else
-                        not_a_number
-                    fi
-                    }
-                fi
-            };;
             status){
+                debug "Main Case: Server: Status:"    #debug
+                debug "Main Case: Server: Status: 3=$3."    #debug
                 echo " "
+                echo -e "${LIGHTGREEN}  |  ${YELLOW}Start  ${LIGHTGREEN}|  ${YELLOW}ID  ${LIGHTGREEN}|  ${YELLOW}Status  ${LIGHTGREEN}|  ${YELLOW}Server Name${NOCOLOR}"
                 if [[ "$3" =~ ^[0-9]+$ ]] ; then
-                    if [ "$3" ] ; then {
-                        get_running "$3"
-                        echo " "
-                        show_screens
-                    }
-                    else
-                        not_a_number
-                    fi
+                    debug "Main Case: Server: Status: 3=Is A Number! $3."    #debug
+                    get_running "$3"
+                    echo " "
+                    show_screens
                 else { 
+                    debug "Main Case: Server: Status: 3=Is Not A Number, or NULL $3."    #debug
                     for (( i = 0; i < $SERVERS; i++ )) ; do
+                        debug "Main Case: Server: Status: i=$i"    #debug
                         get_running $i
                         if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 1 ; fi
                     done
@@ -1351,7 +1829,9 @@ case "$1" in
                     }
                 fi
             };;
-            *){ echo -e "\n${LIGHTGREEN}Choices: "
+            *){ 
+                debug "Main Case: Server: Help: 3=${*:3}."    #debug
+                echo -e "\n${LIGHTGREEN}Choices: "
                 echo -e "${LIGHTGREEN}   |   ${YELLOW}Start${LIGHTGREEN}   |   ${YELLOW}Stop${LIGHTGREEN}   |${NOCOLOR}"
                 echo -e "${LIGHTGREEN}   |   ${YELLOW}Restart${LIGHTGREEN} |   ${YELLOW}Status${LIGHTGREEN} |${NOCOLOR}"
                 echo -e "   ${LIGHTGREEN}Followed by Server ${YELLOW}ID# ${LIGHTGREEN}.${NOCOLOR}"
@@ -1359,30 +1839,85 @@ case "$1" in
                 echo -e "${LIGHTGREEN}IDs in: ${YELLOW}service mcservers server status${NOCOLOR}"
             }
         esac
+        debug "Main Case: Server: >End<"    #debug
+    };;
+    fix){
+        debug "Main Case: Fix: 2=$2 3=$3."    #debug
+        case "$2" in
+            "serverpermissions"){
+                debug "Main Case: Fix: FilePermissions 3=$3"    #debug
+                if ( "$(whoami)" == "root" ) ; then
+                    echo -e "${LIGHTGREEN}Are you Sure you want to fix all file permissions in ${GREEN}${SERVER_SETTINGS}${LIGHTGREEN}?${NOCOLOR}"
+                    echo -e "${YELLOW}CAUTION: ${LIGHTGREEN}This is entirely in BETA! All Files in ${GREEN}${SERVER_SETTINGS}${LIGHTGREEN} will be set to 777${NOCOLOR}"
+                    echo -e "    ${LIGHTGREEN}Meaning the files and folders will be Read/Write available by all users on the system.${NOCOLOR}"
+                    echo -e "    ${LIGHTGREEN}Until I sit down an create the CORRECT CHMOD to limit the files to user ${GREEN}$User${LIGHTGREEN} with proper execution permissions.${NOCOLOR}"
+                    yes_or_no yn
+                    debug "Main Case: Fix: FilePermissions: YN=$yn"    #debug
+                    case "$yn" in
+                        Y){
+                            debug "Main Case: Fix: FilePermissions: Yes!"    #debug
+                            echo -e "${LIGHGREEN}Fixing All MCServers Directory File Permissions in ${GREEN}${SERVER_SETTINGS}${LIGHTGREEN}.${NOCOLOR}"
+                            echo -e "${YELLOW}Please Wait...${NOCOLOR}"
+                            debug "Fix Serverpermissions:    Running ${SERVER_SETTINGS} permissions 777 fix as $(whoami):"
+                            #command "chmod 777 -R ${SERVER_SETTINGS}/*"
+                        };;
+                        N){
+                            debug "Main Case: Fix: FilePermissions: No!"    #debug
+                            echo -e "${LIGHGREEN}No changes to Permissions in ${GREEN}${SERVER_SETTINGS}${LIGHTGREEN}.${NOCOLOR}"
+                        };;
+                        #*){
+                        #};;
+                    esac
+                else
+                    echo -e "${RED}Error: ${LIGHTGREEN}In order to correct permission issues,${NOCOLOR}"
+                    echo -e "       ${LIGHTGREEN}Must run the fix as ${GREEN}Root/SUDO${LIGHTGREEN}.${NOCOLOR}"
+                    echo -e "${LIGHTGREEN}Example: ${GREEN}sudo service mcservers fix serverpermissions${NOCOLOR}"
+                    debug "Fix Serverpermissions:    Whoami= $(whoami)"
+                fi
+            };;
+            *){
+                echo -e "${RED}BETA: ${LIGHTGREEN}Available options:${NOCOLOR}"
+                echo -e "${GREEN}serverpermissions${NOCOLOR}"
+                debug "Fix Serverpermissions:    User Input: $@"
+            };;
+        esac
+        debug "Main Case: Fix: >End<"    #debug
     };;
     update){
         case "$2" in
             spigot) { 
-                    echo -e "\n${LIGHTGREEN}Do you want to update your server ${GREEN}${BUILDTOOLS_SPIGOT}${LIGHTGREEN} file?${NOCOLOR}"
-			        if [[ "$3" = [YyNn] ]] ; then
-                        yn="$3"
-                    else {					
+                    case "$3" in
+                        "clean"|"normal"|"") ;;
+                        *) {
+                            echo -e -n "${RED}ERROR! ${LIGHTGREEN}Must be ${GREEN}clean${LIGHTGREEN}, ${GREEN}normal${LIGHTGREEN}, or ${GREEN}nothing entirely after spigot${LIGHTGREEN} for ${GREEN}Update Spigot${NOCOLOR}\n"
+                            echo -e -n "${LIGHTGREEN}User: ${GREEN}$3${NOCOLOR}\n"
+                            echo -e -n "${LIGHTGREEN}    Examples: ${GREEN}Service mcservers update spigot clean${NOCOLOR}\n"
+                            echo -e -n "${LIGHTGREEN}        Or: ${GREEN}Service mcservers update spigot normal 1.8.8${NOCOLOR}\n"
+                            echo -e -n "${LIGHTGREEN}        Or: ${GREEN}Service mcservers update spigot${NOCOLOR}\n\n"
+                            exit 0
+                            } ;;
+                    esac
+                    case "$BUILDTOOLSCLEAN" in
+                        "clean"|"normal"|"") ;;
+                        *) {
+                            echo -e -n "${RED}ERROR! ${GREEN}Must be ${GREEN}clean${LIGHTGREEN} or ${GREEN}empty/nothing${LIGHTGREEN} for ${GREEN}\"BUILDTOOLSFAST=\"${NOCOLOR}\n"
+                            echo -e -n "${LIGHTGREEN}BUILDTOOLSCLEAN= ${GREEN}${BUILDTOOLSCLEAN}${NOCOLOR}\n"
+                            echo -e -n "${LIGHTGREEN}In: ${GREEN}Servers.cfg ${LIGHTGREEN}config file.${NOCOLOR}\n\n"
+                            exit 0
+                        } ;;
+                    esac
+			        if [[ "$5" = [YyNn] ]] ; then
+                        yn="$5"
+                    else {
+                        echo -e "\n${LIGHTGREEN}Do you want to update your server ${GREEN}Spigot${LIGHTGREEN} file?${NOCOLOR}"
                         yes_or_no yn
-                    }
+                        }
+                    fi
+                    if [ "$yn" == "N" ] ; then 
+                         exit 0 
                     fi
                     echo " "
-                    case "$yn" in
-                        y|Y){
-                            if [ "$3" == "clean" ] ; then
-                                update_spigot "clean"
-                            else
-                                update_spigot "noclean"
-                            fi
-                            };;
-                        n|N){ echo -e "${GREEN}${BUILDTOOLS_SPIGOT} ${LIGHTGREEN}Unchanged.${NOCOLOR}"
-                            echo " "
-                            };;
-                    esac
+                    update_spigot "$3" "$4"
                     };;
             minecraft|vanilla) { 
                     echo -e "\n${LIGHTGREEN}Do you want to update your server ${GREEN}${MINECRAFT_SERVER}${LIGHTGREEN} file?${NOCOLOR}"
@@ -1469,6 +2004,161 @@ case "$1" in
                     };;
             esac
         };;
+    variable|variables) {
+        case $2 in 
+            bungeecordurl|1) {
+                    serverscfg_configuring BUNGEECORD_URL "$3" "$4"
+                } ;;
+            bungeecordfile|2) {
+                    serverscfg_configuring BUNGEECORD "$3" "$4"
+                } ;;
+            buildtoolsurl|3) {
+                    serverscfg_configuring BUILDTOOLS_URL "$3" "$4"
+                } ;;
+            buildtoolsclean|4) {
+                    if [ -z "$3" ] ; then
+                        serverscfg_configuring BUILDTOOLSCLEAN
+                    elif ! [[ "$3" =~ ^(clean|normal)$ ]] ; then
+                        echo -e "\n${RED}ERROR:  ${LIGHTGREEN}Must be ${GREEN}Clean${LIGHTGREEN},${GREEN} Normal${LIGHTGREEN}, or nothing.${NOCOLOR}"
+                    else serverscfg_configuring MINECRAFT_SNAPSHOT_URL "$3" "$4"
+                    fi
+                } ;;
+            spigotdefaultbuild|5) {
+                    serverscfg_configuring BUILDTOOLS_BUILD_VERSION "$3" "$4"
+                } ;;
+            spigotbuildoutput|6) {
+                    serverscfg_configuring BUILDTOOLS_OUTPUT "$3" "$4"
+                } ;;
+            spigotbuildcusprefix|7) {
+                    serverscfg_configuring BUILDTOOLS_CUS_OUTPUT "$3" "$4"
+                } ;;
+            spigotlatestoutput|8) {
+                    serverscfg_configuring SPIGOT_LATEST "$3" "$4"
+                } ;;
+            mcserverurl|9) {
+                    serverscfg_configuring MINECRAFT_SERVER_URL "$3" "$4"
+                } ;;
+            mcserverfileoutput|10) {
+                    serverscfg_configuring MINECRAFT_SERVER "$3" "$4"
+                } ;;
+            mcsnapshoturl|11) {
+                    serverscfg_configuring MINECRAFT_SNAPSHOT_URL "$3" "$4"
+                } ;;
+            mcsnapshotfileoutput|12) {
+                    serverscfg_configuring MINECRAFT_SNAPSHOT "$3" "$4"
+                } ;;
+            backupslocation|13) {
+                    serverscfg_configuring MANUAL_BACKUPS_LOCATION "$3" "$4"
+                } ;;
+            listserverscreens|14) {
+                    if [ -z "$3" ] ; then
+                        serverscfg_configuring SHOW_SCREENS
+                    elif ! [[ "$3" =~ ^(true|false) ]] ; then
+                        echo -e "\n${RED}ERROR:  ${LIGHTGREEN}Must be ${GREEN}true${LIGHTGREEN}, or${GREEN} false${}LIGHTGREEN}.${NOCOLOR}"
+                    else serverscfg_configuring SHOW_SCREENS "$3" "$4"
+                    fi
+                } ;;
+            uselessmenupausing|15) {
+                    if [ -z "$3" ] ; then
+                        serverscfg_configuring UNNEEDED_MENU_PAUSING
+                    elif ! [[ "$3" =~ ^(true|false) ]] ; then
+                        echo -e "\n${RED}ERROR:  ${LIGHTGREEN}Must be ${GREEN}true${LIGHTGREEN}, or${GREEN} false${}LIGHTGREEN}.${NOCOLOR}"
+                    else serverscfg_configuring UNNEEDED_MENU_PAUSING "$3" "$4"
+                    fi
+                } ;;
+            *) {
+                    echo -e "\n${LIGHTGREEN}Variables available to be changed:${NOCOLOR}"
+                    echo -e "  ${LIGHTGREEN}Server Independent:${NOCOLOR}"
+                    echo -e "  ${LIGHTGREEN}   1. BungeecordURL${NOCOLOR}"        #BUNGEECORD_URL
+                    echo -e "  ${LIGHTGREEN}   2. BungeecordFile${NOCOLOR}"       #BUNGEECORD
+                    echo -e "  ${LIGHTGREEN}   3. BuildtoolsURL${NOCOLOR}"        #BUILDTOOLS_URL
+                    echo -e "  ${LIGHTGREEN}   4. BuildtoolsClean${NOCOLOR}"      #BUILDTOOLSCLEAN
+                    echo -e "  ${LIGHTGREEN}   5. SpigotDefaultBuild${NOCOLOR}"   #BUILDTOOLS_BUILD_VERSION
+                    echo -e "  ${LIGHTGREEN}   6. SpigotBuildOutput${NOCOLOR}"    #BUILDTOOLS_OUTPUT
+                    echo -e "  ${LIGHTGREEN}   7. SpigotBuildCusPrefix${NOCOLOR}" #BUILDTOOLS_CUS_OUTPUT
+                    echo -e "  ${LIGHTGREEN}   8. SpigotLatestOutput${NOCOLOR}"   #SPIGOT_LATEST
+                    echo -e "  ${LIGHTGREEN}   9. MCServerURL${NOCOLOR}"          #MINECRAFT_SERVER_URL
+                    echo -e "  ${LIGHTGREEN}  10. MCServerFileOutput${NOCOLOR}"   #MINECRAFT_SERVER
+                    echo -e "  ${LIGHTGREEN}  11. MCSnapshotURL${NOCOLOR}"        #MINECRAFT_SNAPSHOT_URL
+                    echo -e "  ${LIGHTGREEN}  12. MCSnapshotFileOutput${NOCOLOR}" #MINECRAFT_SNAPSHOT
+                    echo -e "\n${LIGHTGREEN}Script Settings:${NOCOLOR}"
+                    echo -e "  ${LIGHTGREEN}  13. BackupsLocation${NOCOLOR}"      #MANUAL_BACKUPS_LOCATION
+                    echo -e "  ${LIGHTGREEN}  14. ListServerScreens${NOCOLOR}"    #SHOW_SCREENS
+                    echo -e "  ${LIGHTGREEN}  15. UselessMenuPausing${NOCOLOR}"   #UNNEEDED_MENU_PAUSING
+                    echo -e "\n${RED}BETA:  ${LIGHTGREEN}Choices are entirely lowercase or # choice.${NOCOLOR}"
+                    echo -e "  ${LIGHTGREEN}Example: ${GREEN}service mcservers variable mcsnapshoturl${NOCOLOR}"
+                    echo -e "  ${LIGHTGREEN}     Or: ${GREEN}service mcservers variable mcsnapshoturl example.com${NOCOLOR}"
+                    echo -e "  ${LIGHTGREEN}     Or: ${GREEN}service mcservers variable 11 example.com${NOCOLOR}"
+                    echo -e " "
+                    exit 0
+                } ;;
+        esac
+        } ;;
+        credit|credits) {
+            echo -e "Though this script is, and will be, far from \"finished\", tweaks, changes, addition, and removal"
+            echo -e "    of code will always be a thing. The following are sources and assistance I have many thanks"
+            echo -e "    to, small or large. Without further adue, credits in no particular order:"
+            echo -e " "
+            echo -e "The many AMVs on Youtube."
+            echo -e "    My music list(s) have gotten longer over the years. Would be greatfully longer, if"
+            echo -e "    Youtube copyright controlling measures taking down many great arts of work and entertainment."
+            echo -e "    Much entertainment and motivation has helped me through the sessions of storming thoughts,"
+            echo -e "    trials and testing, and hair pulling."
+            echo -e " "
+            echo -e "The ever expanding methods and uses of managing Minecraft Servers."
+            echo -e "    Back in my day of running a Minecraft server, there was not a lot of variety of management tools."
+            echo -e "    Sticking to the basics, and adding features users, and myself, would need, everything"
+            echo -e "    has a rymn or reason"
+            echo -e " "
+            echo -e "The many sources of scripting, not just the Bash code for Linux."
+            echo -e "    With the release of the corrupt Windows 10 to the wild, Linux terminal use can be found within."
+            echo -e "    Though I did not originally think this could be use for Windows, I'm sure at least one or so users"
+            echo -e "    would find it of some use, and assistance."
+            echo -e " "
+            echo -e "Many ex-MCDen Staff from my college years."
+            echo -e "    I may have mispelled or left some users out, many have given great examples as to improving the"
+            echo -e "    quality of life features and functions needed, both ingame and backend. This is not my first,"
+            echo -e "    nor will it be mylast script, snippet or full, to be. I have never pride myself as to being a"
+            echo -e "    code programmer, but as a \"Computer Solver.\""
+            echo -e "        (List of Users to come... Promise!)"
+            echo -e " "
+            echo -e "Spigot, Craftbukkit, Spout, and Minecraft.net. Forums, Wikis, and sites in general."
+            echo -e "    To make a list of each would require a second credits page... I started MC Jan 1st, 2011, if"
+            echo -e "    I recall, this was prior, or just starting of Craftbukkit. I bounded around MC's forums, then"
+            echo -e "    to Craftbukkit when other college friends and I wanted a more \"dedicated\" server to play on."
+            echo -e "    after many failures of running a VM, and blaming it for corruptions to the world due the VM and/or"
+            echo -e "    MC server crashing. Renting a MC server and using Craftbukkit assisted with creating fully available"
+            echo -e "    server for us to play and goof around on. Allowing us to expand on what the limited vanilla MC server"
+            echo -e "    would normally not do. No nether access, all one world."
+            echo -e "    Though stuff like Forge looked promising, allowing friends to join with mixed mods, and specific"
+            echo -e "    versions none-the-less, was a concern. I kept the server, and future revisions, unique and managable."
+            echo -e "    Until Spout came along. Allowing Vanilla and Spout users to join, even if both would be considered"
+            echo -e "    conflicted. Spout users could see, craft, and use items Vanilla users would not. Yet did not require"
+            echo -e "    users to have special mods or the likes. Spout users could download anything needed from the server."
+            echo -e "    Reminding me of Garry's Mod. Shortly after Craftbukkit++ was spawned, then branched into Spigot,"
+            echo -e "    and now what we know Spigot today."
+            echo -e "    Though I plan to expand into using Sponge with mods, when I have the time to better understand it,"
+            echo -e "    I only wish to have the time to expand upon my memories with other players in the history of"
+            echo -e "    Minecraft."
+            echo -e " "
+            echo -e "Youtube, Twitch, Reddit..I'm sure there are others..."
+            echo -e "    That have kept me in the loop of many of the changes in the two years I've been absent from the game."
+            echo -e "    Though I have the itch to start up a server, all my previous MC friends have lost the interest"
+            echo -e "    in MC, and have drifted out of contact. I'm sure only one or two may find this information, I thank"
+            echo -e "    you all for your great assistance, memories, and putting up with my social awkwardnss trying to lead"
+            echo -e "    a server and improve upon it."
+            echo -e " "
+            echo -e "This script is available on my github and on Spigot's site under my name, LigerXT5. Anywhere may result"
+            echo -e "    in tampering of this script in malicious ways. This script is, and will always be open sourced to all."
+            echo -e "    Donations that have been requested to be given, can be done, as I do enjoy a good pizza, soda, or"
+            echo -e "    \"adult beverage.\" Though in this day in age, direct donations with Paypal has shown drama and"
+            echo -e "    negative affects in many lives I've seen, mostly on Twitch/Youtube/etc. I would happily take donations"
+            echo -e "    through Streamlabs, an online stream management tool. Which accepts various currencies, including"
+            echo -e "    crypto currencies, such as Bitcoin (BTC) and Etherium (ETH). Please do not donat in Bitcoin Cash..."
+            echo -e "    https://streamlabs.com/ligerxt5"
+            echo -e " "
+            echo -e "In all, Expect the Unexpected. Plan ahead, and practice games like Chess. Critical thinking is always the best."
+        };;
     help|*) {
             echo -e "\n${LIGHTGREEN}Below Effect All Servers Listed In ${GREEN}$SERVER_SETTINGS/servers.cfg${LIGHTGREEN}.${NOCOLOR}"
             echo -e "\n${LIGHTGREEN} Server +"
@@ -1477,7 +2167,9 @@ case "$1" in
             echo -e "   ${LIGHTGREEN} Stop ID#/All${NOCOLOR}     - ${LIGHTGREEN}Stop select server.${NOCOLOR}"
             echo -e "   ${LIGHTGREEN} Restart ID#/All${NOCOLOR}  - ${LIGHTGREEN}Restart select server.${NOCOLOR}"           #Hidden note: If mcservers server start all skip, script will skip the user answer to create missing server_path directories that are missing.
             echo -e "\n${LIGHTGREEN} Update +${NOCOLOR}            - ${LIGHTGREEN}Update to latest releases.${NOCOLOR}"
-            echo -e "   ${LIGHTGREEN} Spigot${NOCOLOR}           - ${LIGHTGREEN}Update Spigot.jar to Latest Build.${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} Spigot +${NOCOLOR}         - ${LIGHTGREEN}Update Spigot.jar to Latest Build.${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN}   Clean/Normal+${NOCOLOR}  - ${LIGHTGREEN}Clear Buildtools or leave it be. Overrides config.${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN}   Ver/Latest${NOCOLOR}     - ${LIGHTGREEN}Including Clean/Normal, forces MC Build Version. Overrides Config.${NOCOLOR}"
             echo -e "   ${LIGHTGREEN} Minecraft${NOCOLOR}        - ${LIGHTGREEN}Download Minecraft_Server.jar.${NOCOLOR}"
             echo -e "   ${LIGHTGREEN} Snapshot${NOCOLOR}         - ${LIGHTGREEN}Download Snapshot.jar.${NOCOLOR}"
             echo -e "   ${LIGHTGREEN} Bungeecord${NOCOLOR}       - ${LIGHTGREEN}Download latest Bungeecord.jar.${NOCOLOR}"
@@ -1490,12 +2182,16 @@ case "$1" in
             echo -e "   ${LIGHTGREEN} Create${NOCOLOR}           - ${LIGHTGREEN}Create Template Files for MC Servers.${NOCOLOR}"
             echo -e "   ${LIGHTGREEN} Edit${NOCOLOR}             - ${LIGHTGREEN}View/Edit Template or Server ID files.${NOCOLOR}"
             echo -e "   ${LIGHTGREEN} Overwrite${NOCOLOR}        - ${LIGHTGREEN}Overwrite Server's file with Template file.${NOCOLOR}"
-            echo -e " \n${LIGHTGREEN} Backup +${NOCOLOR}"
+            echo -e "\n${LIGHTGREEN} Backup +${NOCOLOR}"
             echo -e "   ${LIGHTGREEN} ID#${NOCOLOR}              - ${LIGHTGREEN}Backup WHOLE Server ID. Add Y skips question.${NOCOLOR}"
             echo -e "   ${LIGHTGREEN} Clean ID# Days#${NOCOLOR}  - ${LIGHTGREEN}Clean out backups older than #Days. Add Y skips question.${NOCOLOR}"
             echo -e "   ${LIGHTGREEN} List ID#${NOCOLOR}         - ${LIGHTGREEN}Lists all backups residing in backup directory${NOCOLOR}"
+            echo -e "\n${RED} BETA:${NOCOLOR}               - ${YELLOW}Use with Caution!${NOCOLOR}"
+            echo -e "${LIGHTGREEN} Servers Config Customizing${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} Variables${NOCOLOR}        - ${LIGHTGREEN}Lists menu of servers.cfg variables to bed edits${NOCOLOR}"
+            echo -e "   ${LIGHTGREEN} Credits${NOCOLOR}          - ${LIGHTGREEN}Credits, Thanks, etc.${NOCOLOR}"
             echo -e "\n${LIGHTGREEN} Help${NOCOLOR}                - ${LIGHTGREEN}What you see before you now...${NOCOLOR}"
-            echo -e "${LIGHTGREEN}Version: ${GREEN}1.21 March 3, 2017${NOCOLOR}"
+            echo -e "${LIGHTGREEN}Version: ${GREEN}1.3 Feb 20, 2019${NOCOLOR}"
             echo -e "\n${LIGHTGREEN}Use of these commands are as follows:${YELLOW} service mcservers server status 1${NOCOLOR}"
           };;
 esac
