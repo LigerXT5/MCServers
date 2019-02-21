@@ -34,7 +34,7 @@ exist="false"           # Filler Temp Variable for random loop usage. Need to do
 
 # Script Configuration Setting
 
-DEBUGGING="TRUE"
+DEBUGGING="FALSE"
 
 debug() {
     if [[ "${DEBUGGING}" =~ ^(True|true|TRUE)$ ]] ; then 
