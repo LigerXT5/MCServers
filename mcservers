@@ -400,7 +400,7 @@ stop_servers() {
         if is_running "$1" ; then
             debug "stop_servers: is_running $1 True (True/False)"    #debug
             i="${SHUTDOWN_SECONDS[$1]}"
-            debug "stop_servers: Shutdown_seconds $1=   ${SHUTDOWN_SECONDS[$1]seconds}"    #debug
+            debug "stop_servers: Shutdown_seconds $1=   ${SHUTDOWN_SECONDS[$1]}seconds"    #debug
             debug "stop_servers: Command:    screen -rx ${SERVER_NAME[$1]} -X eval 'stuff \"${MSG_CMD[$1]} ${SHUTDOWN_MSG1[$1]}$i${SHUTDOWN_MSG2[$1]}\"\015'"    #debug
             while [ "$i" -gt 0 ]; do
                 command "screen -rx ${SERVER_NAME[$1]} -X eval 'stuff \"${MSG_CMD[$1]} ${SHUTDOWN_MSG1[$1]}$i${SHUTDOWN_MSG2[$1]}\"\015'"
