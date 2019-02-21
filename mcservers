@@ -1860,7 +1860,7 @@ case "$1" in
                             echo -e "${LIGHGREEN}Fixing All MCServers Directory File Permissions in ${GREEN}${SERVER_SETTINGS}${LIGHTGREEN}.${NOCOLOR}"
                             echo -e "${YELLOW}Please Wait...${NOCOLOR}"
                             debug "Fix Serverpermissions:    Running ${SERVER_SETTINGS} permissions 777 fix as $(whoami):"
-                            #command "chmod 777 -R ${SERVER_SETTINGS}/*"
+                            #command "sudo chmod -R 777 ${SERVER_SETTINGS}/*"
                         };;
                         N){
                             debug "Main Case: Fix: FilePermissions: No!"    #debug
