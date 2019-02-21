@@ -103,7 +103,7 @@ else {
         echo "BUNGEECORD_URL=\"http://ci.md-5.net/job/BungeeCord/lastBuild/artifact/bootstrap/target/BungeeCord.jar\""
         echo " "
         echo "  #Name for Bungeecord.jar when downloaded and saved."
-        echo "BUNGEECORD=\"BungeeCord.jar\""
+        echo "BUNGEECORD=\"BungeeCord\""
         echo " "
         echo "  #URL to the newest build of Buildtools. Type \"none\" if you absolutely do not wish to download this."
         echo "BUILDTOOLS_URL=\"https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar\""
@@ -704,14 +704,14 @@ update_bungee(){
         echo -e "\n"
         debug "Update_Bungee: Command: curl ${BUNGEECORD_URL} -o ${BUNGEECORD}.jar"    #debug
         curl "${BUNGEECORD_URL}" -o "${BUNGEECORD}.jar"
-        if [ -f "${BUNGEECORD}" ] ; then
-            { echo -e "\n${GREEN}${BUNGEECORD}${LIGHTGREEN} Servers will be updated upon next ${YELLOW}Start${LIGHTGREEN}/${YELLOW}Restart${LIGHTGREEN}.${NOCOLOR}"
+        if [ -f "${BUNGEECORD}.jar" ] ; then
+            { echo -e "\n${GREEN}${BUNGEECORD}{LIGHTGREEN}.jar Servers will be updated upon next ${YELLOW}Start${LIGHTGREEN}/${YELLOW}Restart${LIGHTGREEN}.${NOCOLOR}"
             }
         else {
-            echo -e "\n${RED}ERROR! ${GREEN}${BUNGEECORD} ${RED}Not Found!${NOCOLOR}"
+            echo -e "\n${RED}ERROR! ${GREEN}${BUNGEECORD}.jar ${RED}Not Found!${NOCOLOR}"
             echo -e "${LIGHTGREEN}   Did the download of the ${GREEN}${BUNGEECORD_URL}${RED} Fail?${NOCOLOR}"
             echo -e "${LIGHTGREEN}   If so, update your ${GREEN}servers.cfg${LIGHTGREEN} in ${GREEN}${SERVER_SETTINGS}${NOCOLOR}"
-            echo -e "${LIGHTGREEN}     with ${GREEN}BUNGEECORD_URL=\"URL-To-FileName.jar\"${LIGHTGREEN}.${NOCOLOR}"
+            echo -e "${LIGHTGREEN}     with ${GREEN}BUNGEECORD_URL=\"URL-To-FileName\"${LIGHTGREEN}.${NOCOLOR}"
             }
         fi
     fi
