@@ -34,7 +34,7 @@ exist="false"           # Filler Temp Variable for random loop usage. Need to do
 
 # Script Configuration Setting
 
-DEBUGGING="FALSE"
+DEBUGGING="TRUE"
 
 debug() {
     if [[ "${DEBUGGING}" =~ ^(True|true|TRUE)$ ]] ; then 
@@ -493,12 +493,12 @@ update_spigot(){
         fi
         if [ -f "BuildTools.jar?" ] ; then
             debug "Update_Spigot: Removing BuildTools.jar? file."    #debug
-            command "rm BuildTools.jar?"
+            command "rm -f BuildTools.jar? "
             echo " "
         fi
         if [ -f "BuildTools.jar" ] ; then
             debug "Update_Spigot: Removing Buildtools.jar file."    #debug
-            command "rm BuildTools.jar"
+            command "rm -f BuildTools.jar"
             echo " "
         fi
         echo -e -n "\n${LIGHTGREEN}Downloading Latest ${GREEN}BuildTools.jar ${LIGHTGREEN}for${GREEN} Spigot ${LIGHTGREEN}Please Wait.${NOCOLOR}"
@@ -519,13 +519,14 @@ update_spigot(){
                 debug "Update_Spigot: Home=User_Directory:    $USER_DIRECTORY"    #debug
                 debug "Update_Spigot: Command: HOME=$USER_DIRECTORY java -jar BuildTools.jar"    #debug
                 HOME="$USER_DIRECTORY" java -jar BuildTools.jar
+                echo -e "\n${LIGHTGREEN}Copying Latest${GREEN} Spigot***.jar ${LIGHTGREEN}to${GREEN} $SERVER_SETTINGS ${LIGHTGREEN}as${GREEN} ${SPIGOT_LATEST}.jar${LIGHTGREEN}.${NOCOLOR}" 
             else
                 debug "Update_Spigot: Home=User_Directory:    $USER_DIRECTORY"    #debug
                 debug "Update_Spigot: Buildtools_build_version=$BUILDTOOLS_BUILD_VERSION"    #debug
                 debug "Update_Spigot: Command: HOME=$USER_DIRECTORY java -jar BuildTools.jar --rev ${BUILDTOOLS_BUILD_VERSION}"    #debug
                 HOME="$USER_DIRECTORY" java -jar BuildTools.jar --rev "${BUILDTOOLS_BUILD_VERSION}"
             fi
-            echo -e "\n${LIGHTGREEN}Copying${GREEN} Spigot ${LIGHTGREEN}to${GREEN} $SERVER_SETTINGS ${LIGHTGREEN}as${GREEN} ${BUILDTOOLS_OUTPUT} ${LIGHTGREEN}.${NOCOLOR}" 
+            echo -e "\n${LIGHTGREEN}Copying${GREEN} spigot${BUILDTOOLS_BUILD_VERSION}.jar ${LIGHTGREEN}to${GREEN} $SERVER_SETTINGS ${LIGHTGREEN}as${GREEN} ${SPIGOT_LATEST}.jar${LIGHTGREEN}.${NOCOLOR}" 
         else 
             debug "Update_Spigot: Home=User_Directory:  $USER_DIRECTORY"    #debug
             debug "Update_Spigot: 2=$2."    #debug
@@ -541,8 +542,8 @@ update_spigot(){
                     debug "Update_Spigot: 2=NULL/latest"    #debug
                     debug "Update_Spigot: Command: ls ${SERVER_SETTINGS}/buildtools/$BUILDTOOLS_OUTPUT* 1> /dev/null 2>&1"    #debug
                     if ls "${SERVER_SETTINGS}"/buildtools/"$BUILDTOOLS_OUTPUT"* 1> /dev/null 2>&1; then
-                        debug "Update_Spigot: Command: cp $(ls -t $SERVER_SETTINGS/buildtools/$BUILDTOOLS_OUTPUT*.jar | head -1) ../${SPIGOT_LATEST}.jar"    #debug
-                        command "cp $(ls -t $SERVER_SETTINGS/buildtools/$BUILDTOOLS_OUTPUT*.jar | head -1) ../${SPIGOT_LATEST}.jar"
+                        debug "Update_Spigot: Command: cp \$(ls -t $SERVER_SETTINGS/buildtools/$BUILDTOOLS_OUTPUT* | head -1) ../${SPIGOT_LATEST}.jar"    #debug
+                        command "cp $(ls -t $SERVER_SETTINGS/buildtools/$BUILDTOOLS_OUTPUT* | head -1) ../${SPIGOT_LATEST}.jar"
                     else
                         echo -e "\n${RED}ERROR! ${GREEN}Spigot.jar File ${RED}Not Found!${NOCOLOR}"
                     fi
@@ -584,7 +585,7 @@ update_minecraft(){
         pwd;
         if [ -f "${MINECRAFT_SERVER}.jar" ] ; then
             {
-            rm "${MINECRAFT_SERVER}.jar"
+            rm -f "${MINECRAFT_SERVER}.jar"
             echo -e "${LIGHTGREEN} Deleted!${NOCOLOR}"
             }
         else { echo -e "${LIGHTGREEN} None Detected.${NOCOLOR}"
@@ -592,7 +593,7 @@ update_minecraft(){
         fi
         if [ -f "${MINECRAFT_SERVER}.jar?" ] ; then
             debug "Update_Minecraft: Removing ${MINECRAFT_SERVER}.jar? file."    #debug
-            command "rm ${MINECRAFT_SERVER}.jar?"
+            command "rm -f ${MINECRAFT_SERVER}.jar?"
             echo " "
         fi
         echo -e -n "\n${LIGHTGREEN}Downloading Latest ${GREEN}${MINECRAFT_SERVER}.jar ${LIGHTGREEN}From Minecraft.net. Please Wait.${NOCOLOR}"
@@ -634,7 +635,7 @@ update_snapshot(){
         cd "$SERVER_SETTINGS" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} ${NOCOLOR}\n" && exit; }
         pwd;
         if [ -f "${MINECRAFT_SNAPSHOT}.jar" ] ; then
-            { rm "${MINECRAFT_SNAPSHOT}.jar"
+            { rm -f "${MINECRAFT_SNAPSHOT}.jar"
             echo -e "${LIGHTGREEN} Deleted."
             }
         else { echo -e "${LIGHTGREEN} None Detected."
@@ -642,7 +643,7 @@ update_snapshot(){
         fi
         if [ -f "${MINECRAFT_SNAPSHOT}.jar?" ] ; then
             debug "Update_Snapshot: Removing ${MINECRAFT_SNAPSHOT}.jar"    #debug
-            command "rm ${MINECRAFT_SNAPSHOT}.jar?"
+            command "rm -f ${MINECRAFT_SNAPSHOT}.jar?"
             echo " "
         fi
         echo -e -n "\n${LIGHTGREEN}Downloading Latest ${GREEN}${MINECRAFT_SNAPSHOT}.jar ${LIGHTGREEN}From Minecraft.net. Please Wait.${NOCOLOR}"
@@ -683,7 +684,7 @@ update_bungee(){
         cd "$SERVER_SETTINGS" || { echo -e -n "${RED}ERROR! Cannot Change Directories to ${SERVER_SETTINGS} ${NOCOLOR}\n" && exit; }
         pwd;
             if [ -f "${BUNGEECORD}" ] ; then
-            { rm "${BUNGEECORD}"
+            { rm -f "${BUNGEECORD}"
             echo -e "${LIGHTGREEN} Deleted."
             }
         else { echo -e "${LIGHTGREEN}None Detected."
@@ -691,7 +692,7 @@ update_bungee(){
         fi
         if [ -f "${BUNGEECORD}?" ] ; then
             debug "Update_Bungee: Removing ${BUNGEECORD}.jar? file."    #debug
-            command "rm ${BUNGEECORD}?"
+            command -f "rm ${BUNGEECORD}?"
             echo " "
         fi
         echo -e -n "\n${LIGHTGREEN}Downloading Latest ${GREEN}${BUNGEECORD}${LIGHTGREEN} Please Wait.${NOCOLOR}"
