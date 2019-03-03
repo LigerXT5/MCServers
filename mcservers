@@ -408,7 +408,7 @@ stop_servers() {
                 sleep 1
                 : $((i--))
             done
-            echo -e "\n${LIGHTGREEN}   Executing ${SHUTDOWN_CMD[$1]}."
+            echo -e "\n${LIGHTGREEN}   Executing ${GREEN}${SHUTDOWN_CMD[$1]}${LIGHTGREEN}..."
             debug "stop_servers: Command:    screen -rx ${SERVER_NAME[$1]} -X eval 'stuff \"${SHUTDOWN_CMD[$1]}\"\015'"    #debug
             command "screen -rx ${SERVER_NAME[$1]} -X eval 'stuff \"${SHUTDOWN_CMD[$1]}\"\015'"
             if [[ "${UNNEEDED_MENU_PAUSING}" =~ ^(True|true|TRUE)$ ]] ; then sleep 3 ; fi
